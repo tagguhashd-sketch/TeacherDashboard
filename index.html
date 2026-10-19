@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClassPulse — Teacher's Classroom Companion</title>
+<meta name="description" content="ClassPulse: attendance with WhatsApp parent alerts, behaviour tracking, marks & grades, and syllabus deadlines — all in one beautiful dashboard.">
+<meta name="theme-color" content="#4f46e5">
+
+<!-- Apply saved theme before first paint (prevents flash) -->
+<script>
+  (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem('classpulse_state_v1') || '{}');
+      var t = (s.settings && s.settings.theme) || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    } catch (e) { /* fresh start */ }
+  })();
+</script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Tailwind CSS (Play CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          display: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif']
+        },
+        boxShadow: {
+          soft: '0 8px 30px rgba(15,23,42,.06)',
+          lift: '0 18px 40px -14px rgba(79,70,229,.45)'
+        }
+      }
+    }
+  };
+</script>
+
+<!-- Reusable component classes (Tailwind @apply) -->
+<style type="text/tailwindcss">
+  .card        { @apply bg-white/85 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/70 dark:border-white/10 rounded-3xl shadow-soft; }
+  .input       { @apply w-full rounded-2xl border border-slate-300/80 dark:border-white/10 bg-white/90 dark:bg-slate-900/70 px-4 py-3 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15; }
+  .input-sm    { @apply rounded-xl px-3 py-2 text-sm; }
+  .label       { @apply block text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5; }
+  .btn         { @apply inline-flex items-center justify-center gap-2 font-semibold rounded-2xl px-4 py-2.5 text-sm transition-all duration-200 select-none active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none cursor-pointer; }
+  .btn-primary { @apply text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 hover:-translate-y-px; }
+  .btn-soft    { @apply bg-slate-900/[.04] dark:bg-white/[.07] text-slate-700 dark:text-slate-200 hover:bg-slate-900/[.08] dark:hover:bg-white/[.12] border border-slate-900/[.05] dark:border-white/10; }
+  .btn-wa      { @apply text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/30 hover:-translate-y-px; }
+  .btn-danger  { @apply bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200/70 dark:border-rose-500/20; }
+  .btn-good    { @apply text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200/80 dark:border-emerald-500/25; }
+  .btn-bad     { @apply text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200/80 dark:border-rose-500/25; }
+  .icon-btn    { @apply relative inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-xl text-slate-500 dark:text-slate-300 bg-slate-900/[.04] dark:bg-white/[.06] hover:bg-slate-900/[.08] dark:hover:bg-white/[.12] dark:border dark:border-white/10 transition active:scale-95 cursor-pointer; }
+  .chip        { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap; }
+  .tab-btn     { @apply flex flex-1 items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-semibold text-slate-500 dark:text-slate-400 transition-all duration-200 hover:text-slate-800 dark:hover:text-slate-100 active:scale-[.98] cursor-pointer; }
+  .tab-btn.active { @apply text-white bg-gradient-to-r from-indigo-600 to-violet-600 shadow-lg shadow-indigo-600/30; }
+  .m-tab       { @apply flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] font-semibold text-slate-400 dark:text-slate-500 transition active:scale-95 cursor-pointer; }
+  .m-tab.active { @apply text-indigo-600 dark:text-indigo-400; }
+  .seg         { @apply inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/[.06] p-1 border border-slate-200/70 dark:border-white/10 shrink-0; }
+  .seg button  { @apply px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 transition-all duration-200 active:scale-95 cursor-pointer; }
+  .seg button.on-p { @apply bg-emerald-500 text-white shadow-md shadow-emerald-500/40; }
+  .seg button.on-a { @apply bg-rose-500 text-white shadow-md shadow-rose-500/40; }
+  .reason-chip { @apply px-3 py-2 rounded-xl text-sm font-medium bg-slate-100 dark:bg-white/[.06] text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 transition active:scale-95 cursor-pointer text-left; }
+  .reason-chip.sel-good { @apply bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/30; }
+  .reason-chip.sel-bad  { @apply bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/30; }
+  .pill-filter { @apply px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-white/[.06] text-slate-500 dark:text-slate-400 transition active:scale-95 whitespace-nowrap cursor-pointer; }
+  .pill-filter.active { @apply bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow; }
+  .score-input { @apply w-[74px] text-center rounded-lg bg-transparent py-1.5 font-semibold text-slate-800 dark:text-slate-100 outline-none border border-transparent focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-800 transition; }
+  .row-item    { @apply flex items-center gap-3 sm:gap-4 px-2 sm:px-3 py-3 rounded-2xl transition hover:bg-slate-900/[.03] dark:hover:bg-white/[.04]; }
+  .check-box   { @apply w-7 h-7 shrink-0 rounded-[9px] border-2 border-slate-300 dark:border-white/20 flex items-center justify-center text-white transition-all duration-200 active:scale-90 cursor-pointer; }
+  .check-box.done { @apply bg-gradient-to-br from-emerald-400 to-emerald-600 border-transparent shadow-md shadow-emerald-500/30; }
+</style>
+
+<!-- Plain CSS: animations, scrollbars, table stickiness -->
+<style>
+  body { -webkit-tap-highlight-color: transparent; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(100,116,139,.35); border-radius: 99px; border: 2px solid transparent; background-clip: content-box; }
+  .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border: 2px solid transparent; background-clip: content-box; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+  .scroll-touch { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+
+  @keyframes fadeUp  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes popIn   { from { opacity: 0; transform: scale(.95) translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes slideL  { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+  @keyframes slideR  { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes shake   { 10%,90% { transform: translateX(-1px); } 20%,80% { transform: translateX(2px); } 30%,50%,70% { transform: translateX(-4px); } 40%,60% { transform: translateX(4px); } }
+  @keyframes stripes { from { background-position: 0 0; } to { background-position: 40px 0; } }
+  .anim-fadeUp { animation: fadeUp .45s cubic-bezier(.22,1,.36,1) both; }
+  .anim-pop    { animation: popIn .28s cubic-bezier(.22,1,.36,1) both; }
+  .anim-slideL { animation: slideL .35s cubic-bezier(.22,1,.36,1) both; }
+  .anim-slideR { animation: slideR .35s cubic-bezier(.22,1,.36,1) both; }
+  .anim-toast  { animation: toastIn .3s cubic-bezier(.22,1,.36,1) both; }
+  .anim-shake  { animation: shake .45s both; }
+
+  .progress-stripes {
+    background-image: linear-gradient(45deg, rgba(255,255,255,.22) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.22) 75%, transparent 75%);
+    background-size: 40px 40px; animation: stripes 1.2s linear infinite;
+  }
+
+  input[type="number"].no-spin::-webkit-outer-spin-button,
+  input[type="number"].no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"].no-spin { -moz-appearance: textfield; appearance: textfield; }
+  .dark input[type="date"], .dark select { color-scheme: dark; }
+
+  /* Marks spreadsheet: sticky first column + header */
+  .marks-table th, .marks-table td { padding: .45rem .6rem; white-space: nowrap; }
+  .marks-table thead th { position: sticky; top: 0; z-index: 6; background: #f4f5fb; }
+  .dark .marks-table thead th { background: #121a2e; }
+  .marks-table td:first-child, .marks-table th:first-child {
+    position: sticky; left: 0; z-index: 5; background: #fbfbfe; box-shadow: 10px 0 14px -10px rgba(15,23,42,.18);
+  }
+  .dark .marks-table td:first-child, .dark .marks-table th:first-child { background: #0d1424; }
+  .marks-table thead th:first-child { z-index: 10; }
+
+  .modal-backdrop { background: rgba(15,23,42,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+
+<body class="font-sans bg-[#f3f5fb] dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen">
+
+<!-- ══════════ SVG ICON SPRITE (used via <use href="#i-…">) ══════════ -->
+<svg width="0" height="0" class="absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></g></symbol>
+    <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm5.2 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.4-.7-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.4 1.8 2.2 1.2 1.1 2.3 1.5 2.6 1.6.3.2.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2.1 1c.3.2.5.3.6.4 0 .1 0 .7-.3 1.4z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></g></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></g></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></g></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></g></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></g></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></g></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g></symbol>
+    <symbol id="i-calcheck" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></g></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></g></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></g></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></g></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></g></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></g></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></g></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></g></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></g></symbol>
+    <symbol id="i-arr-r" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></g></symbol>
+    <symbol id="i-arr-l" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></g></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></g></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><polygon fill="currentColor" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></g></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></g></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></g></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></g></symbol>
+    <symbol id="i-grad" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/><path d="M22 10v6"/></g></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></g></symbol>
+    <symbol id="i-lists" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></g></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></symbol>
+  </defs>
+</svg>
+
+<!-- Ambient gradient background blobs -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
+  <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-300/50 dark:bg-indigo-600/20 blur-3xl"></div>
+  <div class="absolute top-1/3 -right-40 w-[28rem] h-[28rem] rounded-full bg-emerald-300/40 dark:bg-emerald-500/10 blur-3xl"></div>
+  <div class="absolute -bottom-40 left-1/4 w-80 h-80 rounded-full bg-amber-300/30 dark:bg-violet-600/10 blur-3xl"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     1 · ONBOARDING WIZARD
+══════════════════════════════════════════════════════════════════ -->
+<section id="wizard" class="hidden min-h-screen flex flex-col items-center justify-center px-4 py-10">
+  <div class="w-full max-w-xl anim-fadeUp">
+
+    <!-- Brand -->
+    <div class="flex items-center justify-center gap-3 mb-2">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-lift">
+        <svg class="w-7 h-7"><use href="#i-pulse"/></svg>
+      </div>
+      <div>
+        <h1 class="font-display text-3xl font-extrabold tracking-tight leading-none">Class<span class="text-indigo-600 dark:text-indigo-400">Pulse</span></h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Your classroom, in rhythm.</p>
+      </div>
+      <button class="icon-btn theme-toggle ml-2" title="Toggle dark / light" aria-label="Toggle theme">
+        <svg class="w-5 h-5 hidden dark:block"><use href="#i-sun"/></svg>
+        <svg class="w-5 h-5 dark:hidden"><use href="#i-moon"/></svg>
+      </button>
+    </div>
+
+    <!-- Progress steps -->
+    <div class="flex items-center justify-center gap-0 mt-8 mb-6" id="w-progress">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- Wizard card -->
+    <div class="card p-6 sm:p-8 relative overflow-hidden">
+      <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-600 via-violet-500 to-emerald-400"></div>
+
+      <!-- STEP 1 · School -->
+      <div class="w-panel" data-step="1">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4">
+          <svg class="w-6 h-6"><use href="#i-grad"/></svg>
+        </div>
+        <h2 class="font-display text-2xl font-bold">Welcome! Which school do you teach at?</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1.5 mb-6">This appears on your dashboard and in parent messages.</p>
+        <label class="label" for="w-school">School name</label>
+        <input id="w-school" class="input text-lg" type="text" placeholder="e.g. Sunrise Public School" autocomplete="organization">
+        <button id="w-demo" class="mt-6 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 inline-flex items-center gap-1.5 transition active:scale-95">
+          <svg class="w-4 h-4"><use href="#i-sparkle"/></svg>
+          Just exploring? Load a demo class instead
+          <svg class="w-4 h-4"><use href="#i-arr-r"/></svg>
+        </button>
+      </div>
+
+      <!-- STEP 2 · Teacher -->
+      <div class="w-panel hidden" data-step="2">
+        <div class="w-12 h-12 rounded-2xl bg-violet-100 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-4">
+          <svg class="w-6 h-6"><use href="#i-users"/></svg>
+        </div>
+        <h2 class="font-display text-2xl font-bold">And what's your name?</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1.5 mb-6">Used to greet you and to sign off WhatsApp messages to parents.</p>
+        <label class="label" for="w-teacher">Teacher name</label>
+        <input id="w-teacher" class="input text-lg" type="text" placeholder="e.g. Priya Sharma" autocomplete="name">
+      </div>
+
+      <!-- STEP 3 · Class -->
+      <div class="w-panel hidden" data-step="3">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+          <svg class="w-6 h-6"><use href="#i-book"/></svg>
+        </div>
+        <h2 class="font-display text-2xl font-bold">Which class is this for?</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1.5 mb-6">Enter the class and section you'll manage in this workspace.</p>
+        <label class="label" for="w-class">Class &amp; section</label>
+        <input id="w-class" class="input text-lg" type="text" placeholder="e.g. 8E">
+        <div class="flex flex-wrap gap-2 mt-4">
+          <button class="pill-filter w-class-ex" type="button">8E</button>
+          <button class="pill-filter w-class-ex" type="button">7B</button>
+          <button class="pill-filter w-class-ex" type="button">10-A</button>
+          <button class="pill-filter w-class-ex" type="button">6C</button>
+        </div>
+      </div>
+
+      <!-- STEP 4 · Roster -->
+      <div class="w-panel hidden" data-step="4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="font-display text-2xl font-bold">Build your class roster</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1.5">Add each student with a parent's WhatsApp number. You can edit this anytime later.</p>
+          </div>
+          <span id="w-stu-count" class="chip bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 shrink-0">0 students</span>
+        </div>
+
+        <form id="w-add-form" class="mt-5 space-y-3">
+          <div>
+            <label class="label" for="w-stu-name">Student name</label>
+            <input id="w-stu-name" class="input" type="text" placeholder="e.g. Aarav Sharma">
+          </div>
+          <div>
+            <label class="label">Parent WhatsApp number</label>
+            <div class="flex gap-2">
+              <select id="w-stu-cc" class="input cc-select !w-[118px] shrink-0" aria-label="Country code"></select>
+              <input id="w-stu-phone" class="input flex-1" type="tel" inputmode="tel" placeholder="98765 43210">
+            </div>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">Tip: you can also paste the full international number (with country code) directly.</p>
+          </div>
+          <button type="submit" class="btn btn-soft w-full">
+            <svg class="w-4 h-4"><use href="#i-plus"/></svg> Add student to list
+          </button>
+        </form>
+
+        <div id="w-stu-list" class="mt-4 max-h-52 overflow-y-auto scroll-touch space-y-1 pr-1"></div>
+        <p id="w-stu-empty" class="text-center text-sm text-slate-400 dark:text-slate-500 py-4">No students yet — add your first one above.</p>
+
+        <button id="w-sample" class="mt-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 inline-flex items-center gap-1.5 transition active:scale-95">
+          <svg class="w-4 h-4"><use href="#i-sparkle"/></svg> Add a sample roster of 10 students
+        </button>
+      </div>
+
+      <!-- Error line -->
+      <p id="w-error" class="hidden mt-4 text-sm font-medium text-rose-600 dark:text-rose-400"></p>
+
+      <!-- Wizard nav -->
+      <div class="flex items-center justify-between mt-7 pt-5 border-t border-slate-200/70 dark:border-white/10">
+        <button id="w-back" class="btn btn-soft invisible">
+          <svg class="w-4 h-4"><use href="#i-arr-l"/></svg> Back
+        </button>
+        <span id="w-step-label" class="text-xs font-semibold text-slate-400 dark:text-slate-500">Step 1 of 4</span>
+        <button id="w-next" class="btn btn-primary">
+          <span id="w-next-label">Continue</span>
+          <svg class="w-4 h-4"><use href="#i-arr-r"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-slate-400 dark:text-slate-500 mt-5">Everything is stored privately in this browser — no account, no server, works offline.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     2 · MAIN DASHBOARD
+══════════════════════════════════════════════════════════════════ -->
+<div id="app" class="hidden min-h-screen">
+
+  <!-- Sticky header -->
+  <header class="sticky top-0 z-40 bg-white/75 dark:bg-slate-950/70 backdrop-blur-xl border-b border-slate-200/70 dark:border-white/10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 h-[68px] flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-lift shrink-0">
+        <svg class="w-6 h-6"><use href="#i-pulse"/></svg>
+      </div>
+      <div class="min-w-0 flex-1">
+        <p id="h-school" class="font-display font-bold leading-tight truncate">School</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-tight truncate">
+          <span id="h-class" class="font-semibold text-indigo-600 dark:text-indigo-400">Class</span>
+          <span class="mx-1 opacity-50">·</span><span id="h-teacher">Teacher</span>
+        </p>
+      </div>
+
+      <button id="btn-roster" class="btn btn-soft !px-3" title="Manage class roster">
+        <svg class="w-[18px] h-[18px]"><use href="#i-users"/></svg>
+        <span class="hidden sm:inline">Roster</span>
+        <span id="h-roster-n" class="chip bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 !px-2 !py-0.5">0</span>
+      </button>
+      <button id="btn-export" class="icon-btn" title="Download backup (JSON)" aria-label="Export backup">
+        <svg class="w-5 h-5"><use href="#i-download"/></svg>
+      </button>
+      <label class="icon-btn" title="Restore from backup" aria-label="Import backup">
+        <svg class="w-5 h-5"><use href="#i-upload"/></svg>
+        <input id="import-file" type="file" accept=".json,application/json" class="hidden">
+      </label>
+      <button class="icon-btn theme-toggle" title="Toggle dark / light" aria-label="Toggle theme">
+        <svg class="w-5 h-5 hidden dark:block"><use href="#i-sun"/></svg>
+        <svg class="w-5 h-5 dark:hidden"><use href="#i-moon"/></svg>
+      </button>
+      <button id="btn-reset" class="btn btn-danger !px-3" title="Reset class (delete all data)">
+        <svg class="w-[18px] h-[18px]"><use href="#i-reset"/></svg>
+        <span class="hidden md:inline">Reset Class</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 sm:px-6 pb-32 md:pb-16">
+
+    <!-- Greeting -->
+    <div class="mt-6 anim-fadeUp">
+      <h2 id="greet-title" class="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">Hello!</h2>
+      <p id="greet-sub" class="text-sm text-slate-500 dark:text-slate-400 mt-1"></p>
+    </div>
+
+    <!-- Stats strip -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-5">
+      <div class="card p-4 anim-fadeUp" style="animation-delay:40ms">
+        <div class="flex items-center gap-2.5">
+          <span class="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0"><svg class="w-5 h-5"><use href="#i-users"/></svg></span>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Students</p>
+        </div>
+        <p id="s-students" class="font-display text-[26px] font-bold mt-2 leading-none">0</p>
+        <p id="s-students-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 truncate">in class</p>
+      </div>
+      <div class="card p-4 anim-fadeUp" style="animation-delay:90ms">
+        <div class="flex items-center gap-2.5">
+          <span class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"><svg class="w-5 h-5"><use href="#i-calcheck"/></svg></span>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Attendance today</p>
+        </div>
+        <p id="s-att" class="font-display text-[26px] font-bold mt-2 leading-none">—</p>
+        <p id="s-att-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 truncate">Not marked yet</p>
+      </div>
+      <div class="card p-4 anim-fadeUp" style="animation-delay:140ms">
+        <div class="flex items-center gap-2.5">
+          <span class="w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0"><svg class="w-5 h-5"><use href="#i-chart"/></svg></span>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Latest test avg</p>
+        </div>
+        <p id="s-avg" class="font-display text-[26px] font-bold mt-2 leading-none">—</p>
+        <p id="s-avg-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 truncate">Add a test to see</p>
+      </div>
+      <div class="card p-4 anim-fadeUp" style="animation-delay:190ms">
+        <div class="flex items-center gap-2.5">
+          <span class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0"><svg class="w-5 h-5"><use href="#i-book"/></svg></span>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Syllabus done</p>
+        </div>
+        <p id="s-syl" class="font-display text-[26px] font-bold mt-2 leading-none">—</p>
+        <p id="s-syl-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 truncate">Add topics to track</p>
+      </div>
+    </div>
+
+    <!-- Tabs (desktop / tablet) -->
+    <nav class="hidden md:flex card !rounded-2xl p-1.5 gap-1 mt-6" role="tablist" aria-label="Dashboard sections">
+      <button class="tab-btn active" data-tab="attendance" role="tab"><svg class="w-5 h-5"><use href="#i-calcheck"/></svg>Attendance</button>
+      <button class="tab-btn" data-tab="behavior" role="tab"><svg class="w-5 h-5"><use href="#i-heart"/></svg>Behaviour</button>
+      <button class="tab-btn" data-tab="marks" role="tab"><svg class="w-5 h-5"><use href="#i-chart"/></svg>Marks &amp; Grades</button>
+      <button class="tab-btn" data-tab="portion" role="tab"><svg class="w-5 h-5"><use href="#i-book"/></svg>Portion &amp; Deadlines</button>
+    </nav>
+
+    <!-- ─────────── TAB 1 · ATTENDANCE ─────────── -->
+    <section id="panel-attendance" class="tab-panel mt-5">
+      <div class="card p-4 sm:p-6 anim-fadeUp">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex-1 min-w-[180px]">
+            <h3 class="font-display text-lg font-bold flex items-center gap-2">
+              <svg class="w-5 h-5 text-emerald-500"><use href="#i-calcheck"/></svg> Attendance Tracker
+            </h3>
+            <p id="att-date-label" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="att-date" type="date" class="input input-sm !w-auto" aria-label="Attendance date">
+            <button id="att-today" class="btn btn-soft !py-2">Today</button>
+          </div>
+        </div>
+
+        <!-- Progress + summary chips -->
+        <div class="mt-5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="chip bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Present · <span id="att-p-n">0</span></span>
+            <span class="chip bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Absent · <span id="att-a-n">0</span></span>
+            <span class="chip bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-300"><span class="w-2 h-2 rounded-full bg-slate-400"></span>Unmarked · <span id="att-u-n">0</span></span>
+            <span id="att-pct" class="ml-auto font-display font-bold text-slate-700 dark:text-slate-200">—</span>
+          </div>
+          <div class="h-2.5 rounded-full bg-slate-200/70 dark:bg-white/10 mt-2.5 overflow-hidden flex">
+            <div id="att-bar-p" class="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500" style="width:0%"></div>
+            <div id="att-bar-a" class="h-full bg-gradient-to-r from-rose-400 to-rose-500 transition-all duration-500" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Tools -->
+        <div class="flex flex-wrap items-center gap-2 mt-5">
+          <div class="relative flex-1 min-w-[170px]">
+            <svg class="w-[18px] h-[18px] absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><use href="#i-search"/></svg>
+            <input id="att-search" class="input input-sm !pl-10" type="text" placeholder="Search student…">
+          </div>
+          <button id="att-markall" class="btn btn-soft !py-2"><svg class="w-4 h-4 text-emerald-500"><use href="#i-check"/></svg>Mark all present</button>
+          <button id="att-notifyall" class="btn btn-wa !py-2"><svg class="w-4 h-4"><use href="#i-wa"/></svg>Notify absentees <span id="att-notify-n" class="chip bg-white/25 text-white !px-2 !py-0.5">0</span></button>
+        </div>
+
+        <!-- List -->
+        <div id="att-list" class="mt-3 divide-y divide-slate-100 dark:divide-white/[.06]"></div>
+        <div id="att-empty" class="hidden text-center py-12">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-white/[.06] flex items-center justify-center text-slate-400"><svg class="w-7 h-7"><use href="#i-users"/></svg></div>
+          <p class="font-display font-bold mt-4">No students to show</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add students to your roster to start taking attendance.</p>
+          <button class="btn btn-primary mt-4 open-roster"><svg class="w-4 h-4"><use href="#i-plus"/></svg>Add students</button>
+        </div>
+        <p id="att-noresults" class="hidden text-center text-sm text-slate-400 dark:text-slate-500 py-8">No students match your search.</p>
+      </div>
+    </section>
+
+    <!-- ─────────── TAB 2 · BEHAVIOUR ─────────── -->
+    <section id="panel-behavior" class="tab-panel hidden mt-5">
+      <div class="grid lg:grid-cols-[1fr_380px] gap-5 items-start">
+
+        <!-- Log behaviour -->
+        <div class="card p-4 sm:p-6 anim-fadeUp">
+          <h3 class="font-display text-lg font-bold flex items-center gap-2">
+            <svg class="w-5 h-5 text-rose-500"><use href="#i-heart"/></svg> Behaviour Tracker
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tap <strong class="text-emerald-600 dark:text-emerald-400">+ Good</strong> or <strong class="text-rose-600 dark:text-rose-400">− Bad</strong> to log behaviour in seconds.</p>
+          <div class="relative mt-4">
+            <svg class="w-[18px] h-[18px] absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><use href="#i-search"/></svg>
+            <input id="beh-search" class="input input-sm !pl-10" type="text" placeholder="Search student…">
+          </div>
+          <div id="beh-list" class="mt-3 divide-y divide-slate-100 dark:divide-white/[.06]"></div>
+          <div id="beh-empty" class="hidden text-center py-12">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-white/[.06] flex items-center justify-center text-slate-400"><svg class="w-7 h-7"><use href="#i-users"/></svg></div>
+            <p class="font-display font-bold mt-4">No students yet</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add students to your roster first.</p>
+            <button class="btn btn-primary mt-4 open-roster"><svg class="w-4 h-4"><use href="#i-plus"/></svg>Add students</button>
+          </div>
+          <p id="beh-noresults" class="hidden text-center text-sm text-slate-400 dark:text-slate-500 py-8">No students match your search.</p>
+        </div>
+
+        <!-- Side column -->
+        <div class="space-y-5">
+          <!-- Focus list -->
+          <div class="card p-5 anim-fadeUp" style="animation-delay:60ms">
+            <div class="flex items-center gap-2">
+              <span class="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0"><svg class="w-5 h-5"><use href="#i-target"/></svg></span>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-display font-bold leading-tight">Focus List</h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Students who may need mentoring</p>
+              </div>
+              <select id="focus-range" class="input input-sm !w-auto !py-1.5 text-xs" aria-label="Focus list time range">
+                <option value="7">This week</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="all">All time</option>
+              </select>
+            </div>
+            <div id="focus-list" class="mt-4 space-y-2"></div>
+          </div>
+
+          <!-- Class stars -->
+          <div class="card p-5 anim-fadeUp" style="animation-delay:120ms">
+            <div class="flex items-center gap-2">
+              <span class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0"><svg class="w-5 h-5"><use href="#i-trophy"/></svg></span>
+              <div>
+                <h3 class="font-display font-bold leading-tight">Class Stars</h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Most positive behaviour</p>
+              </div>
+            </div>
+            <div id="stars-list" class="mt-4 space-y-2"></div>
+          </div>
+
+          <!-- Recent activity -->
+          <div class="card p-5 anim-fadeUp" style="animation-delay:180ms">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <h3 class="font-display font-bold">Recent Activity</h3>
+              <div class="flex gap-1.5">
+                <button class="pill-filter act-filter active" data-f="all">All</button>
+                <button class="pill-filter act-filter" data-f="good">Good</button>
+                <button class="pill-filter act-filter" data-f="bad">Concerns</button>
+              </div>
+            </div>
+            <div id="activity-list" class="mt-3 space-y-1 max-h-[420px] overflow-y-auto scroll-touch pr-1"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── TAB 3 · MARKS & GRADES ─────────── -->
+    <section id="panel-marks" class="tab-panel hidden mt-5 space-y-5">
+
+      <!-- Add test -->
+      <div class="card p-4 sm:p-6 anim-fadeUp">
+        <h3 class="font-display text-lg font-bold flex items-center gap-2">
+          <svg class="w-5 h-5 text-violet-500"><use href="#i-chart"/></svg> Marks &amp; Grades Tracker
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Add a test, then type scores straight into the grid. Low scores are highlighted automatically.</p>
+        <form id="test-form" class="mt-4 grid sm:grid-cols-[1fr_130px_170px_auto] gap-3 items-end">
+          <div>
+            <label class="label" for="test-name">Test / assignment name</label>
+            <input id="test-name" class="input input-sm" type="text" placeholder="e.g. Unit Test 1 – Maths">
+          </div>
+          <div>
+            <label class="label" for="test-total">Total marks</label>
+            <input id="test-total" class="input input-sm no-spin" type="number" min="1" max="1000" value="50">
+          </div>
+          <div>
+            <label class="label" for="test-date">Date</label>
+            <input id="test-date" class="input input-sm" type="date">
+          </div>
+          <button type="submit" class="btn btn-primary"><svg class="w-4 h-4"><use href="#i-plus"/></svg>Add test</button>
+        </form>
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 pt-4 border-t border-slate-200/70 dark:border-white/10 text-sm">
+          <label class="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400">
+            Highlight scores below
+            <input id="marks-threshold" type="number"min="1" max="99" class="input input-sm no-spin !w-[72px] !py-1.5 text-center font-semibold"> %
+          </label>
+          <span class="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400"><span class="w-3 h-3 rounded bg-rose-200 dark:bg-rose-500/40 inline-block"></span>needs attention</span>
+          <button id="btn-csv" class="btn btn-soft !py-1.5 ml-auto"><svg class="w-4 h-4"><use href="#i-download"/></svg>Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Grid -->
+      <div class="card p-2 sm:p-3 anim-fadeUp" style="animation-delay:60ms">
+        <div id="marks-scroll" class="overflow-auto scroll-touch max-h-[560px] rounded-2xl">
+          <table id="marks-table" class="marks-table w-full text-sm border-collapse"></table>
+        </div>
+        <div id="marks-empty" class="hidden text-center py-12 px-4">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-white/[.06] flex items-center justify-center text-slate-400"><svg class="w-7 h-7"><use href="#i-chart"/></svg></div>
+          <p class="font-display font-bold mt-4">No marks to show yet</p>
+          <p id="marks-empty-msg" class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add a test above, then enter scores in the grid.</p>
+        </div>
+      </div>
+
+      <!-- Needs support -->
+      <div class="card p-4 sm:p-6 anim-fadeUp" style="animation-delay:120ms">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0"><svg class="w-5 h-5"><use href="#i-alert"/></svg></span>
+          <div class="flex-1 min-w-[160px]">
+            <h3 class="font-display font-bold leading-tight">Needs Support</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Students below the threshold — message parents in one tap</p>
+          </div>
+          <select id="support-test" class="input input-sm !w-auto max-w-full" aria-label="Choose test"></select>
+        </div>
+        <div id="support-list" class="mt-3 divide-y divide-slate-100 dark:divide-white/[.06]"></div>
+      </div>
+    </section>
+
+    <!-- ─────────── TAB 4 · PORTION & DEADLINES ─────────── -->
+    <section id="panel-portion" class="tab-panel hidden mt-5 space-y-5">
+
+      <!-- Progress hero -->
+      <div class="card overflow-hidden anim-fadeUp">
+        <div class="p-5 sm:p-7 bg-gradient-to-r from-indigo-600/[.08] via-violet-500/[.08] to-emerald-500/[.08] dark:from-indigo-500/10 dark:via-violet-500/10 dark:to-emerald-500/10">
+          <div class="flex flex-wrap items-end gap-x-8 gap-y-3">
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><svg class="w-4 h-4 text-indigo-500"><use href="#i-book"/></svg>Syllabus progress</p>
+              <p class="font-display text-4xl sm:text-5xl font-extrabold mt-1.5 leading-none"><span id="syl-pct">0%</span><span class="text-base sm:text-lg font-semibold text-slate-400 dark:text-slate-500 ml-2">portion completed</span></p>
+            </div>
+            <p id="syl-counts" class="text-sm text-slate-500 dark:text-slate-300 pb-1"></p>
+          </div>
+          <div class="h-4 rounded-full bg-slate-900/[.08] dark:bg-white/10 mt-5 overflow-hidden">
+            <div id="syl-bar" class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-emerald-400 progress-stripes transition-all duration-700" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add topic -->
+      <div class="card p-4 sm:p-6 anim-fadeUp" style="animation-delay:60ms">
+        <h3 class="font-display text-lg font-bold flex items-center gap-2">
+          <svg class="w-5 h-5 text-amber-500"><use href="#i-lists"/></svg> Portion &amp; Deadlines
+        </h3>
+        <form id="syl-form" class="mt-4 grid sm:grid-cols-[1fr_170px_170px_auto] gap-3 items-end">
+          <div>
+            <label class="label" for="syl-title">Chapter / topic</label>
+            <input id="syl-title" class="input input-sm" type="text" placeholder="e.g. Ch. 6 – Fractions">
+          </div>
+          <div>
+            <label class="label" for="syl-subject">Subject <span class="normal-case font-medium">(optional)</span></label>
+            <input id="syl-subject" class="input input-sm" type="text" placeholder="e.g. Maths">
+          </div>
+          <div>
+            <label class="label" for="syl-date">Target date</label>
+            <input id="syl-date" class="input input-sm" type="date">
+          </div>
+          <button type="submit" class="btn btn-primary"><svg class="w-4 h-4"><use href="#i-plus"/></svg>Add topic</button>
+        </form>
+      </div>
+
+      <!-- Filters + list -->
+      <div class="anim-fadeUp" style="animation-delay:120ms">
+        <div class="flex gap-2 overflow-x-auto no-scrollbar scroll-touch pb-1" id="syl-filters">
+          <button class="pill-filter syl-filter active" data-f="all">All topics</button>
+          <button class="pill-filter syl-filter" data-f="pending">Pending</button>
+          <button class="pill-filter syl-filter" data-f="overdue">Overdue</button>
+          <button class="pill-filter syl-filter" data-f="done">Completed</button>
+        </div>
+        <div id="syl-list" class="mt-3 space-y-5"></div>
+        <div id="syl-empty" class="hidden card text-center py-12 px-4">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-white/[.06] flex items-center justify-center text-slate-400"><svg class="w-7 h-7"><use href="#i-book"/></svg></div>
+          <p class="font-display font-bold mt-4">No topics here yet</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add chapters above with target dates and tick them off as you teach.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile bottom navigation -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-t border-slate-200/80 dark:border-white/10" style="padding-bottom: env(safe-area-inset-bottom)" aria-label="Dashboard sections">
+    <div class="flex">
+      <button class="m-tab active" data-tab="attendance"><svg class="w-6 h-6"><use href="#i-calcheck"/></svg>Attendance</button>
+      <button class="m-tab" data-tab="behavior"><svg class="w-6 h-6"><use href="#i-heart"/></svg>Behaviour</button>
+      <button class="m-tab" data-tab="marks"><svg class="w-6 h-6"><use href="#i-chart"/></svg>Marks</button>
+      <button class="m-tab" data-tab="portion"><svg class="w-6 h-6"><use href="#i-book"/></svg>Portion</button>
+    </div>
+  </nav>
+</div>
+
+<!-- ══════════ MODAL · Behaviour logger ══════════ -->
+<div id="behavior-modal" class="modal hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="modal-backdrop absolute inset-0" data-close-modal></div>
+  <div class="relative card !rounded-b-none sm:!rounded-b-3xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto scroll-touch p-6 anim-pop">
+    <div class="flex items-start gap-3">
+      <span id="bm-icon" class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"></span>
+      <div class="flex-1 min-w-0">
+        <h3 id="bm-title" class="font-display text-lg font-bold leading-tight">Log behaviour</h3>
+        <p id="bm-student" class="text-sm text-slate-500 dark:text-slate-400 truncate"></p>
+      </div>
+      <button class="icon-btn" data-close-modal aria-label="Close"><svg class="w-5 h-5"><use href="#i-x"/></svg></button>
+    </div>
+
+    <p class="label mt-5">Quick reason</p>
+    <div id="bm-chips" class="flex flex-wrap gap-2"></div>
+
+    <label class="label mt-4" for="bm-custom">Or write your own note</label>
+    <input id="bm-custom" class="input" type="text" placeholder="e.g. Distracted others during group work" maxlength="120">
+
+    <label class="label mt-4" for="bm-date">Date</label>
+    <input id="bm-date" class="input" type="date">
+
+    <label id="bm-notify-wrap" class="flex items-center gap-3 mt-5 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/20 cursor-pointer">
+      <input id="bm-notify" type="checkbox" class="w-5 h-5 rounded accent-emerald-500 shrink-0">
+      <span class="flex items-center gap-2 text-sm font-medium text-emerald-800 dark:text-emerald-200">
+        <svg class="w-5 h-5 text-emerald-500 shrink-0"><use href="#i-wa"/></svg>
+        <span id="bm-notify-label">Also notify parent on WhatsApp</span>
+      </span>
+    </label>
+    <p id="bm-error" class="hidden mt-3 text-sm font-medium text-rose-600 dark:text-rose-400"></p>
+
+    <div class="flex gap-2 mt-6">
+      <button class="btn btn-soft flex-1" data-close-modal>Cancel</button>
+      <button id="bm-save" class="btn flex-1 text-white shadow-lg">Save log</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL · Roster manager ══════════ -->
+<div id="roster-modal" class="modal hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="modal-backdrop absolute inset-0" data-close-modal></div>
+  <div class="relative card !rounded-b-none sm:!rounded-b-3xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto scroll-touch p-6 anim-pop">
+    <div class="flex items-start gap-3">
+      <span class="w-11 h-11 rounded-2xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0"><svg class="w-6 h-6"><use href="#i-users"/></svg></span>
+      <div class="flex-1 min-w-0">
+        <h3 class="font-display text-lg font-bold leading-tight">Class Roster</h3>
+        <p id="r-subtitle" class="text-sm text-slate-500 dark:text-slate-400">Add, edit or remove students</p>
+      </div>
+      <button class="icon-btn" data-close-modal aria-label="Close"><svg class="w-5 h-5"><use href="#i-x"/></svg></button>
+    </div>
+
+    <form id="r-form" class="mt-5 space-y-3 p-4 rounded-2xl bg-slate-900/[.03] dark:bg-white/[.04] border border-slate-200/60 dark:border-white/[.07]">
+      <p id="r-form-title" class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Add a student</p>
+      <input id="r-edit-id" type="hidden">
+      <div>
+        <label class="label" for="r-name">Student name</label>
+        <input id="r-name" class="input input-sm" type="text" placeholder="e.g. Aarav Sharma">
+      </div>
+      <div>
+        <label class="label">Parent WhatsApp number</label>
+        <div class="flex gap-2">
+          <select id="r-cc" class="input input-sm cc-select !w-[112px] shrink-0" aria-label="Country code"></select>
+          <input id="r-phone" class="input input-sm flex-1" type="tel" inputmode="tel" placeholder="98765 43210">
+        </div>
+      </div>
+      <p id="r-error" class="hidden text-sm font-medium text-rose-600 dark:text-rose-400"></p>
+      <div class="flex gap-2">
+        <button type="submit" id="r-submit" class="btn btn-primary flex-1 !py-2"><svg class="w-4 h-4"><use href="#i-plus"/></svg><span>Add student</span></button>
+        <button type="button" id="r-cancel-edit" class="btn btn-soft !py-2 hidden">Cancel edit</button>
+      </div>
+    </form>
+
+    <div id="r-list" class="mt-4 divide-y divide-slate-100 dark:divide-white/[.06]"></div>
+    <p id="r-empty" class="hidden text-center text-sm text-slate-400 dark:text-slate-500 py-6">No students in the roster yet.</p>
+
+    <button class="btn btn-soft w-full mt-5" data-close-modal>Done</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL · Notify all absentees ══════════ -->
+<div id="notify-modal" class="modal hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="modal-backdrop absolute inset-0" data-close-modal></div>
+  <div class="relative card !rounded-b-none sm:!rounded-b-3xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto scroll-touch p-6 anim-pop">
+    <div class="flex items-start gap-3">
+      <span class="w-11 h-11 rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0"><svg class="w-6 h-6"><use href="#i-wa"/></svg></span>
+      <div class="flex-1 min-w-0">
+        <h3 class="font-display text-lg font-bold leading-tight">Notify Parents</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400">WhatsApp opens one chat at a time — tap each parent to send the pre-written message.</p>
+      </div>
+      <button class="icon-btn" data-close-modal aria-label="Close"><svg class="w-5 h-5"><use href="#i-x"/></svg></button>
+    </div>
+    <div id="nm-list" class="mt-4 space-y-1"></div>
+    <button class="btn btn-soft w-full mt-5" data-close-modal>Close</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL · Generic confirm ══════════ -->
+<div id="confirm-modal" class="modal hidden fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="modal-backdrop absolute inset-0" data-close-modal></div>
+  <div class="relative card !rounded-b-none sm:!rounded-b-3xl w-full sm:max-w-sm p-6 anim-pop">
+    <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-500/15 text-rose-500 flex items-center justify-center mb-4">
+      <svg class="w-6 h-6"><use href="#i-alert"/></svg>
+    </div>
+    <h3 id="cf-title" class="font-display text-lg font-bold">Are you sure?</h3>
+    <p id="cf-msg" class="text-sm text-slate-500 dark:text-slate-400 mt-1.5"></p>
+    <div class="flex gap-2 mt-6">
+      <button class="btn btn-soft flex-1" data-close-modal>Cancel</button>
+      <button id="cf-ok" class="btn flex-1 text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/30">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div id="toasts" class="fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-6 z-[70] flex flex-col items-center gap-2 w-[min(92vw,420px)] pointer-events-none"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   ClassPulse — application logic
+   State lives in a single object persisted to localStorage on every
+   change, so the dashboard survives refreshes and works offline.
+════════════════════════════════════════════════════════════════════ */
+
+/* ---------- tiny DOM helpers ---------- */
+const $  = (sel, el = document) => el.querySelector(sel);
+const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+const icon = (name, cls = 'w-5 h-5') => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
+
+/* ---------- date helpers (local, yyyy-mm-dd keys) ---------- */
+const pad2 = n => String(n).padStart(2, '0');
+function keyFromDate(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+function todayKey() { return keyFromDate(new Date()); }
+function dateFromKey(k) { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); }
+function fmtKey(k) {
+  if (!k) return '';
+  return dateFromKey(k).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+function relDay(k) { // "Today" / "Yesterday" / date
+  const diff = Math.round((dateFromKey(todayKey()) - dateFromKey(k)) / 864e5);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff === -1) return 'Tomorrow';
+  return fmtKey(k);
+}
+function daysUntil(k) { return Math.round((dateFromKey(k) - dateFromKey(todayKey())) / 864e5); }
+function addDaysKey(k, n) { const d = dateFromKey(k); d.setDate(d.getDate() + n); return keyFromDate(d); }
+
+/* ---------- constants ---------- */
+const LS_KEY = 'classpulse_state_v1';
+const COUNTRY_CODES = [
+  ['91', 'India +91'], ['1', 'USA / Canada +1'], ['44', 'UK +44'], ['971', 'UAE +971'],
+  ['966', 'Saudi Arabia +966'], ['65', 'Singapore +65'], ['61', 'Australia +61'], ['92', 'Pakistan +92'],
+  ['880', 'Bangladesh +880'], ['94', 'Sri Lanka +94'], ['977', 'Nepal +977'], ['27', 'South Africa +27'],
+  ['234', 'Nigeria +234'], ['254', 'Kenya +254'], ['60', 'Malaysia +60'], ['63', 'Philippines +63']
+];
+const REASONS = {
+  good: ['Homework Done', 'Helping Peer', 'Great Answer', 'Punctuality', 'Leadership', 'Kindness', 'Active Participation', 'Excellent Focus'],
+  bad:  ['Disruptive in Class', 'Homework Missing', 'Distracted / Phone Use', 'Late to Class', 'Unkind to a Peer', 'Incomplete Classwork', 'Talking During Lesson', 'Forgot Materials']
+};
+const AVATAR_COLORS = [
+  'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300',
+  'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
+  'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+  'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300',
+  'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300',
+  'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
+  'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300',
+  'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
+];
+function avatarColor(name) {
+  let h = 0; for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function initials(name) {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
+}
+const avatarHTML = (name, size = 'w-11 h-11 text-sm') =>
+  `<span class="${size} rounded-2xl ${avatarColor(name)} font-display font-bold flex items-center justify-center shrink-0">${esc(initials(name))}</span>`;
+
+/* ---------- state ---------- */
+function defaultState() {
+  return {
+    onboarded: false,
+    setup: { school: '', teacher: '', className: '' },
+    students: [],                 // [{ id, name, phone(digits incl. country code) }]
+    attendance: {},               // { 'yyyy-mm-dd': { studentId: 'present'|'absent' } }
+    behavior: [],                 // [{ id, studentId, type:'good'|'bad', reason, date, ts }]
+    tests: [],                    // [{ id, name, total, date }]
+    scores: {},                   // { testId: { studentId: number|null } }
+    syllabus: [],                 // [{ id, title, subject, due, done, doneAt }]
+    settings: { threshold: 40, cc: '91', theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' }
+  };
+}
+let state = loadState();
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    const base = defaultState();
+    // shallow-merge so new fields always exist
+    return { ...base, ...parsed, setup: { ...base.setup, ...(parsed.setup || {}) }, settings: { ...base.settings, ...(parsed.settings || {}) } };
+  } catch (e) { return defaultState(); }
+}
+function saveState() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  catch (e) { toast('Storage is full — could not save. Try exporting a backup.', 'error'); }
+}
+const studentById = id => state.students.find(s => s.id === id);
+const classLabel = () => {
+  const c = state.setup.className.trim();
+  return /^class\b/i.test(c) ? c : `Class ${c}`;
+};
+
+/* ---------- phone + WhatsApp ---------- */
+function normalizePhone(raw, cc) {
+  let d = String(raw || '').replace(/\D/g, '').replace(/^0+(?=\d{10}$)/, ''); // strip trunk 0 on 10-digit numbers
+  if (!d) return '';
+  if (d.length === 10) d = cc + d;                       // local number → add country code
+  return d;
+}
+function fmtPhone(digits) {
+  if (!digits) return '—';
+  return '+' + digits.replace(/(\d{2,3})(\d{5})(\d{4,})$/, '$1 $2 $3');
+}
+function waLink(phone, msg) { return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`; }
+
+function msgAbsent(s, dateK) {
+  const when = dateK === todayKey() ? `today (${fmtKey(dateK)})` : `on ${fmtKey(dateK)}`;
+  return `Dear Parent, your child ${s.name} was marked ABSENT ${when} in ${classLabel()} at ${state.setup.school}. Please acknowledge.\n\nThank you,\n${state.setup.teacher}`;
+}
+function msgBehavior(s, type, reason, dateK) {
+  const when = relDay(dateK).toLowerCase() === 'today' ? 'today' : `on ${fmtKey(dateK)}`;
+  if (type === 'bad') {
+    return `Dear Parent, this is ${state.setup.teacher} from ${state.setup.school} (${classLabel()}).\n\nI wanted to inform you about a behaviour concern regarding ${s.name} ${when}: ${reason}.\n\nWe kindly request you to speak with your child about this. Together, we can help them improve. Please acknowledge.\n\nThank you,\n${state.setup.teacher}`;
+  }
+  return `Dear Parent, this is ${state.setup.teacher} from ${state.setup.school} (${classLabel()}).\n\nWe're happy to share that ${s.name} did something wonderful ${when}: ${reason}.\n\nPlease join us in appreciating their effort!\n\nThank you,\n${state.setup.teacher}`;
+}
+function msgMarks(s, test, score, pct) {
+  return `Dear Parent, this is ${state.setup.teacher} from ${state.setup.school} (${classLabel()}).\n\n${s.name} scored ${score}/${test.total} (${pct}%) in "${test.name}". This is below our expected level of ${state.settings.threshold}%.\n\nWith a little extra support at home and school, we're confident they will improve. Please feel free to reach out to discuss.\n\nThank you,\n${state.setup.teacher}`;
+}
+
+/* ---------- toast ---------- */
+function toast(msg, type = 'success') {
+  const wrap = $('#toasts');
+  const el = document.createElement('div');
+  const styles = type === 'error'
+    ? 'bg-rose-600 text-white'
+    : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900';
+  el.className = `anim-toast pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl text-sm font-medium ${styles}`;
+  el.innerHTML = `${icon(type === 'error' ? 'alert' : 'check', 'w-5 h-5 shrink-0')}<span>${esc(msg)}</span>`;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.transition = 'opacity .3s, transform .3s'; el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(() => el.remove(), 320); }, 2800);
+}
+
+/* ---------- modals ---------- */
+function openModal(id) { $('#' + id).classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
+function closeModal(el) {
+  const m = el.closest('.modal'); if (!m) return;
+  m.classList.add('hidden');
+  if (!$$('.modal:not(.hidden)').length) document.body.classList.remove('overflow-hidden');
+}
+document.addEventListener('click', e => { const c = e.target.closest('[data-close-modal]'); if (c) closeModal(c); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $$('.modal:not(.hidden)').forEach(m => m.classList.add('hidden')), document.body.classList.remove('overflow-hidden'); });
+
+let confirmCb = null;
+function openConfirm({ title, msg, okLabel = 'Delete', onOk }) {
+  $('#cf-title').textContent = title;
+  $('#cf-msg').textContent = msg;
+  $('#cf-ok').textContent = okLabel;
+  confirmCb = onOk;
+  openModal('confirm-modal');
+}
+$('#cf-ok').addEventListener('click', () => { const cb = confirmCb; confirmCb = null; closeModal($('#cf-ok')); cb && cb(); });
+
+/* ---------- theme ---------- */
+function applyTheme() {
+  document.documentElement.classList.toggle('dark', state.settings.theme === 'dark');
+}
+$$('.theme-toggle').forEach(b => b.addEventListener('click', () => {
+  state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(); saveState();
+}));
+
+/* ================================================================
+   ONBOARDING WIZARD
+================================================================ */
+const wiz = { step: 1, students: [] };   // draft roster during setup
+const WIZ_LABELS = ['School', 'Teacher', 'Class', 'Roster'];
+
+function renderWizardProgress() {
+  $('#w-progress').innerHTML = WIZ_LABELS.map((label, i) => {
+    const n = i + 1;
+    const done = n < wiz.step, current = n === wiz.step;
+    const circle = done
+      ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/30'
+      : current
+        ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500 shadow'
+        : 'bg-slate-200/80 dark:bg-white/[.07] text-slate-400 dark:text-slate-500';
+    const bar = i < 3 ? `<span class="w-6 sm:w-10 h-0.5 mx-1.5 rounded ${n < wiz.step ? 'bg-indigo-500' : 'bg-slate-300/70 dark:bg-white/10'}"></span>` : '';
+    return `<span class="flex items-center">
+        <span class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${circle}">${done ? icon('check', 'w-4 h-4') : n}</span>
+          <span class="text-xs font-semibold ${current ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'} ${current ? '' : 'hidden sm:inline'}">${label}</span>
+        </span>${bar}
+      </span>`;
+  }).join('');
+  $('#w-step-label').textContent = `Step ${wiz.step} of 4`;
+  $('#w-back').classList.toggle('invisible', wiz.step === 1);
+  $('#w-next-label').textContent = wiz.step === 4 ? 'Launch Dashboard' : 'Continue';
+}
+
+function showStep(n, dir = 1) {
+  wiz.step = clamp(n, 1, 4);
+  $$('.w-panel').forEach(p => p.classList.toggle('hidden', +p.dataset.step !== wiz.step));
+  const panel = $(`.w-panel[data-step="${wiz.step}"]`);
+  panel.classList.remove('anim-slideL', 'anim-slideR'); void panel.offsetWidth;   // restart animation
+  panel.classList.add(dir >= 0 ? 'anim-slideL' : 'anim-slideR');
+  wizError('');
+  renderWizardProgress();
+  const focusMap = { 1: '#w-school', 2: '#w-teacher', 3: '#w-class', 4: '#w-stu-name' };
+  setTimeout(() => $(focusMap[wiz.step])?.focus(), 60);
+}
+
+function wizError(msg, shakeEl) {
+  const e = $('#w-error');
+  e.textContent = msg; e.classList.toggle('hidden', !msg);
+  if (shakeEl) { shakeEl.classList.remove('anim-shake'); void shakeEl.offsetWidth; shakeEl.classList.add('anim-shake'); shakeEl.focus(); }
+}
+function requireValue(inputSel, msg) {
+  const el = $(inputSel);
+  if (!el.value.trim()) { wizError(msg, el); return null; }
+  return el.value.trim();
+}
+
+function wizardNext() {
+  if (wiz.step === 1) {
+    const v = requireValue('#w-school', 'Please enter your school name to continue.'); if (!v) return;
+    state.setup.school = v;
+  } else if (wiz.step === 2) {
+    const v = requireValue('#w-teacher', 'Please enter your name to continue.'); if (!v) return;
+    state.setup.teacher = v;
+  } else if (wiz.step === 3) {
+    const v = requireValue('#w-class', 'Please enter a class & section (e.g. 8E).'); if (!v) return;
+    state.setup.className = v;
+  } else if (wiz.step === 4) {
+    if (!wiz.students.length) { wizError('Add at least one student — or use the sample roster to try it out.', $('#w-stu-name')); return; }
+    state.students = wiz.students;
+    state.onboarded = true;
+    saveState();
+    showApp();
+    toast(`Welcome aboard! ${classLabel()} is ready.`);
+    return;
+  }
+  saveState();
+  showStep(wiz.step + 1, 1);
+}
+
+function renderWizardStudents() {
+  $('#w-stu-count').textContent = `${wiz.students.length} student${wiz.students.length === 1 ? '' : 's'}`;
+  $('#w-stu-empty').classList.toggle('hidden', wiz.students.length > 0);
+  $('#w-stu-list').innerHTML = wiz.students.map(s => `
+    <div class="row-item !py-2.5">
+      ${avatarHTML(s.name, 'w-9 h-9 text-xs')}
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-sm truncate">${esc(s.name)}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">${esc(fmtPhone(s.phone))}</p>
+      </div>
+      <button type="button" class="icon-btn !w-8 !h-8 text-rose-500 hover:!bg-rose-100 dark:hover:!bg-rose-500/15" data-w-remove="${s.id}" title="Remove">${icon('x', 'w-4 h-4')}</button>
+    </div>`).join('');
+}
+
+const SAMPLE_STUDENTS = [
+  ['Aarav Sharma', '9999900001'], ['Diya Patel', '9999900002'], ['Kabir Singh', '9999900003'],
+  ['Anaya Gupta', '9999900004'], ['Vihaan Reddy', '9999900005'], ['Ishita Nair', '9999900006'],
+  ['Arjun Mehta', '9999900007'], ['Zara Khan', '9999900008'], ['Advait Kumar', '9999900009'], ['Myra Iyer', '9999900010']
+];
+
+function initWizard() {
+  $('#w-next').addEventListener('click', wizardNext);
+  $('#w-back').addEventListener('click', () => showStep(wiz.step - 1, -1));
+  ['#w-school', '#w-teacher', '#w-class'].forEach(sel =>
+    $(sel).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); wizardNext(); } }));
+  $$('.w-class-ex').forEach(b => b.addEventListener('click', () => { $('#w-class').value = b.textContent.trim(); wizError(''); }));
+
+  $('#w-add-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('#w-stu-name').value.trim();
+    const phone = normalizePhone($('#w-stu-phone').value, $('#w-stu-cc').value);
+    if (!name) return wizError('Enter the student\'s name.', $('#w-stu-name'));
+    if (phone.length < 10) return wizError('Enter a valid parent WhatsApp number (with area/country code).', $('#w-stu-phone'));
+    if (wiz.students.some(s => s.phone === phone)) return wizError('That phone number is already in the list.', $('#w-stu-phone'));
+    wiz.students.push({ id: uid(), name, phone });
+    $('#w-stu-name').value = ''; $('#w-stu-phone').value = '';
+    wizError(''); renderWizardStudents();
+    $('#w-stu-name').focus();
+  });
+
+  $('#w-stu-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-w-remove]'); if (!btn) return;
+    wiz.students = wiz.students.filter(s => s.id !== btn.dataset.wRemove);
+    renderWizardStudents();
+  });
+
+  $('#w-sample').addEventListener('click', () => {
+    const cc = $('#w-stu-cc').value;
+    const fresh = SAMPLE_STUDENTS.filter(([, num]) => !wiz.students.some(s => s.phone === cc + num));
+    fresh.forEach(([name, num]) => wiz.students.push({ id: uid(), name, phone: cc + num }));
+    renderWizardStudents();
+    toast(fresh.length ? `Added ${fresh.length} sample students` : 'Sample roster already added');
+  });
+
+  $('#w-demo').addEventListener('click', seedDemo);
+  renderWizardStudents();
+  showStep(1, 1);
+}
+
+/* ---------- full demo dataset (for the "explore" shortcut) ---------- */
+function seedDemo() {
+  const t = todayKey();
+  const students = SAMPLE_STUDENTS.map(([name, num]) => ({ id: uid(), name, phone: '91' + num }));
+  const byName = name => students.find(s => s.name === name).id;
+  const test1 = { id: uid(), name: 'Unit Test 1 – Maths', total: 50, date: addDaysKey(t, -6) };
+  const test2 = { id: uid(), name: 'English Assignment', total: 25, date: addDaysKey(t, -2) };
+  const scores = {
+    [test1.id]: Object.fromEntries([[byName('Aarav Sharma'), 44], [byName('Diya Patel'), 47], [byName('Kabir Singh'), 16], [byName('Anaya Gupta'), 39], [byName('Vihaan Reddy'), 28], [byName('Ishita Nair'), 42], [byName('Arjun Mehta'), 18], [byName('Zara Khan'), 45], [byName('Advait Kumar'), 33], [byName('Myra Iyer'), 41]]),
+    [test2.id]: Object.fromEntries([[byName('Aarav Sharma'), 21], [byName('Diya Patel'), 24], [byName('Kabir Singh'), 12], [byName('Anaya Gupta'), 20], [byName('Vihaan Reddy'), 9], [byName('Ishita Nair'), 22], [byName('Arjun Mehta'), 15], [byName('Zara Khan'), 23], [byName('Advait Kumar'), 18], [byName('Myra Iyer'), 20]])
+  };
+  const att = {};
+  att[t] = Object.fromEntries(students.map(s => [s.id, ['Kabir Singh', 'Myra Iyer'].includes(s.name) ? 'absent' : 'present']));
+  const B = (name, type, reason, daysAgo) => ({ id: uid(), studentId: byName(name), type, reason, date: addDaysKey(t, -daysAgo), ts: Date.now() - daysAgo * 864e5 });
+  state = {
+    ...defaultState(),
+    onboarded: true,
+    setup: { school: 'Sunrise Public School', teacher: 'Priya Sharma', className: '8E' },
+    students,
+    attendance: att,
+    behavior: [
+      B('Kabir Singh', 'bad', 'Disruptive in Class', 0), B('Kabir Singh', 'bad', 'Homework Missing', 2),
+      B('Kabir Singh', 'bad', 'Distracted / Phone Use', 5), B('Arjun Mehta', 'bad', 'Late to Class', 1),
+      B('Arjun Mehta', 'bad', 'Talking During Lesson', 4), B('Vihaan Reddy', 'bad', 'Homework Missing', 3),
+      B('Diya Patel', 'good', 'Helping Peer', 0), B('Diya Patel', 'good', 'Great Answer', 3),
+      B('Zara Khan', 'good', 'Leadership', 1), B('Aarav Sharma', 'good', 'Homework Done', 2),
+      B('Ishita Nair', 'good', 'Kindness', 1), B('Zara Khan', 'good', 'Active Participation', 6)
+    ],
+    tests: [test1, test2],
+    scores,
+    syllabus: [
+      { id: uid(), title: 'Ch. 1 – Rational Numbers', subject: 'Maths', due: addDaysKey(t, -14), done: true, doneAt: addDaysKey(t, -13) },
+      { id: uid(), title: 'Ch. 2 – Linear Equations', subject: 'Maths', due: addDaysKey(t, -7), done: true, doneAt: addDaysKey(t, -6) },
+      { id: uid(), title: 'Ch. 3 – Understanding Quadrilaterals', subject: 'Maths', due: addDaysKey(t, -2), done: false, doneAt: null },
+      { id: uid(), title: 'Poem: The Ant and the Cricket', subject: 'English', due: addDaysKey(t, 2), done: false, doneAt: null },
+      { id: uid(), title: 'Ch. 4 – Data Handling', subject: 'Maths', due: addDaysKey(t, 6), done: false, doneAt: null },
+      { id: uid(), title: 'Revision & Class Test', subject: 'Maths', due: addDaysKey(t, 12), done: false, doneAt: null }
+    ],
+    settings: state.settings
+  };
+  saveState();
+  showApp();
+  toast('Demo class loaded — explore away!');
+}
+
+/* ================================================================
+   DASHBOARD SHELL
+================================================================ */
+let activeTab = 'attendance';
+
+function showApp() {
+  $('#wizard').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  $('#att-date').value = todayKey();
+  $('#test-date').value = todayKey();
+  $('#syl-date').value = todayKey();
+  $('#marks-threshold').value = state.settings.threshold;
+  renderAll();
+}
+function showWizard() {
+  $('#app').classList.add('hidden');
+  $('#wizard').classList.remove('hidden');
+}
+function renderAll() {
+  renderHeader(); renderStats();
+  renderAttendance(); renderBehavior(); renderMarks(); renderSyllabus();
+}
+
+function renderHeader() {
+  $('#h-school').textContent = state.setup.school || 'ClassPulse';
+  $('#h-class').textContent = classLabel();
+  $('#h-teacher').textContent = state.setup.teacher;
+  $('#h-roster-n').textContent = state.students.length;
+  const first = (state.setup.teacher || '').trim().split(/\s+/)[0] || 'Teacher';
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  $('#greet-title').textContent = `${greet}, ${first}`;
+  $('#greet-sub').textContent = `${fmtKey(todayKey())} · Here's what's happening in ${classLabel()} today.`;
+}
+
+/* ---------- stats strip ---------- */
+function attendanceFor(dateK) { return state.attendance[dateK] || {}; }
+function attCounts(dateK) {
+  const day = attendanceFor(dateK);
+  let p = 0, a = 0;
+  state.students.forEach(s => { if (day[s.id] === 'present') p++; else if (day[s.id] === 'absent') a++; });
+  return { p, a, u: state.students.length - p - a, total: state.students.length };
+}
+function testAverage(testId) {
+  const t = state.tests.find(x => x.id === testId); if (!t) return null;
+  const vals = state.students.map(s => state.scores[testId]?.[s.id]).filter(v => typeof v === 'number');
+  if (!vals.length) return null;
+  return Math.round((vals.reduce((x, y) => x + y, 0) / vals.length) / t.total * 100);
+}
+function renderStats() {
+  $('#s-students').textContent = state.students.length;
+  $('#s-students-sub').textContent = `in ${classLabel()}`;
+  const c = attCounts(todayKey());
+  if (c.total && c.p + c.a > 0) {
+    $('#s-att').textContent = Math.round(c.p / c.total * 100) + '%';
+    $('#s-att-sub').textContent = `${c.p} present · ${c.a} absent`;
+  } else { $('#s-att').textContent = '—'; $('#s-att-sub').textContent = 'Not marked yet today'; }
+
+  const latest = [...state.tests].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+  const avg = latest ? testAverage(latest.id) : null;
+  $('#s-avg').textContent = avg !== null ? avg + '%' : '—';
+  $('#s-avg-sub').textContent = latest ? latest.name : 'Add a test to see';
+
+  const done = state.syllabus.filter(x => x.done).length;
+  $('#s-syl').textContent = state.syllabus.length ? Math.round(done / state.syllabus.length * 100) + '%' : '—';
+  $('#s-syl-sub').textContent = state.syllabus.length ? `${done} of ${state.syllabus.length} topics done` : 'Add topics to track';
+}
+
+/* ---------- tabs ---------- */
+function setTab(name) {
+  activeTab = name;
+  $$('.tab-btn, .m-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  $$('.tab-panel').forEach(p => {
+    const show = p.id === 'panel-' + name;
+    p.classList.toggle('hidden', !show);
+    if (show) { p.classList.remove('anim-fadeUp'); void p.offsetWidth; p.classList.add('anim-fadeUp'); }
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+$$('.tab-btn, .m-tab').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+/* ================================================================
+   TAB 1 · ATTENDANCE
+================================================================ */
+function renderAttendance() {
+  const dateK = $('#att-date').value || todayKey();
+  $('#att-date-label').textContent = dateK === todayKey() ? `Today · ${fmtKey(dateK)}` : fmtKey(dateK);
+  const day = attendanceFor(dateK);
+  const q = $('#att-search').value.trim().toLowerCase();
+  const list = state.students.filter(s => s.name.toLowerCase().includes(q));
+
+  $('#att-empty').classList.toggle('hidden', state.students.length > 0);
+  $('#att-noresults').classList.toggle('hidden', !(state.students.length > 0 && list.length === 0));
+
+  $('#att-list').innerHTML = list.map(s => {
+    const st = day[s.id];
+    return `
+    <div class="row-item anim-fadeUp">
+      ${avatarHTML(s.name)}
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold truncate">${esc(s.name)}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${esc(fmtPhone(s.phone))}</p>
+      </div>
+      ${st === 'absent' ? `
+        <a class="btn btn-wa !px-3 !py-2 !rounded-xl shrink-0" target="_blank" rel="noopener"
+           href="${esc(waLink(s.phone, msgAbsent(s, dateK)))}" title="Message parent on WhatsApp">
+          ${icon('wa', 'w-4 h-4')}<span class="hidden sm:inline">Notify Parent</span><span class="sm:hidden">Notify</span>
+        </a>` : ''}
+      <div class="seg" role="group" aria-label="Attendance for ${esc(s.name)}">
+        <button type="button" data-att="present" data-id="${s.id}" class="${st === 'present' ? 'on-p' : ''}">Present</button>
+        <button type="button" data-att="absent" data-id="${s.id}" class="${st === 'absent' ? 'on-a' : ''}">Absent</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const c = attCounts(dateK);
+  $('#att-p-n').textContent = c.p;
+  $('#att-a-n').textContent = c.a;
+  $('#att-u-n').textContent = c.u;
+  $('#att-notify-n').textContent = c.a;
+  $('#att-notifyall').disabled = c.a === 0;
+  $('#att-pct').textContent = c.total && (c.p + c.a) ? `${Math.round(c.p / c.total * 100)}% present` : '—';
+  $('#att-bar-p').style.width = c.total ? (c.p / c.total * 100) + '%' : '0%';
+  $('#att-bar-a').style.width = c.total ? (c.a / c.total * 100) + '%' : '0%';
+}
+
+function setAttendance(studentId, status) {
+  const dateK = $('#att-date').value || todayKey();
+  if (!state.attendance[dateK]) state.attendance[dateK] = {};
+  // tapping the same status again clears it back to "unmarked"
+  if (state.attendance[dateK][studentId] === status) delete state.attendance[dateK][studentId];
+  else state.attendance[dateK][studentId] = status;
+  saveState(); renderAttendance(); renderStats();
+}
+
+function initAttendance() {
+  $('#att-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-att]'); if (!btn) return;
+    setAttendance(btn.dataset.id, btn.dataset.att);
+  });
+  $('#att-date').addEventListener('change', renderAttendance);
+  $('#att-today').addEventListener('click', () => { $('#att-date').value = todayKey(); renderAttendance(); });
+  $('#att-search').addEventListener('input', renderAttendance);
+  $('#att-markall').addEventListener('click', () => {
+    const dateK = $('#att-date').value || todayKey();
+    if (!state.attendance[dateK]) state.attendance[dateK] = {};
+    state.students.forEach(s => state.attendance[dateK][s.id] = 'present');
+    saveState(); renderAttendance(); renderStats();
+    toast(`Everyone marked present for ${relDay(dateK).toLowerCase() === 'today' ? 'today' : fmtKey(dateK)}`);
+  });
+  $('#att-notifyall').addEventListener('click', () => {
+    const dateK = $('#att-date').value || todayKey();
+    const day = attendanceFor(dateK);
+    const absentees = state.students.filter(s => day[s.id] === 'absent');
+    $('#nm-list').innerHTML = absentees.length ? absentees.map(s => `
+      <div class="row-item !py-2.5">
+        ${avatarHTML(s.name, 'w-9 h-9 text-xs')}
+        <div class="flex-1 min-w-0"><p class="font-semibold text-sm truncate">${esc(s.name)}</p><p class="text-xs text-slate-500 dark:text-slate-400">${esc(fmtPhone(s.phone))}</p></div>
+        <a class="btn btn-wa !px-3 !py-2 !rounded-xl" target="_blank" rel="noopener" href="${esc(waLink(s.phone, msgAbsent(s, dateK)))}">${icon('wa', 'w-4 h-4')}Send</a>
+      </div>`).join('')
+      : '<p class="text-center text-sm text-slate-400 py-6">No absentees for this date.</p>';
+    openModal('notify-modal');
+  });
+}
+
+/* ================================================================
+   TAB 2 · BEHAVIOUR
+================================================================ */
+let activityFilter = 'all';
+
+function behaviorCounts(studentId, withinDays = null) {
+  let good = 0, bad = 0;
+  const since = withinDays ? addDaysKey(todayKey(), -withinDays) : null;
+  state.behavior.forEach(l => {
+    if (l.studentId !== studentId) return;
+    if (since && l.date < since) return;
+    l.type === 'good' ? good++ : bad++;
+  });
+  return { good, bad, net: good - bad };
+}
+
+function renderBehavior() {
+  const q = $('#beh-search').value.trim().toLowerCase();
+  const list = state.students.filter(s => s.name.toLowerCase().includes(q));
+  $('#beh-empty').classList.toggle('hidden', state.students.length > 0);
+  $('#beh-noresults').classList.toggle('hidden', !(state.students.length > 0 && list.length === 0));
+
+  $('#beh-list').innerHTML = list.map(s => {
+    const c = behaviorCounts(s.id);
+    const netCls = c.net > 0 ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                 : c.net < 0 ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                             : 'bg-slate-200/70 dark:bg-white/10 text-slate-500 dark:text-slate-400';
+    return `
+    <div class="row-item flex-wrap anim-fadeUp">
+      ${avatarHTML(s.name)}
+      <div class="flex-1 min-w-[120px]">
+        <p class="font-semibold truncate">${esc(s.name)}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          <span class="text-emerald-600 dark:text-emerald-400 font-semibold">+${c.good} good</span> ·
+          <span class="text-rose-600 dark:text-rose-400 font-semibold">${c.bad} concerns</span>
+        </p>
+      </div>
+      <span class="chip ${netCls}" title="Net points">${c.net > 0 ? '+' : ''}${c.net} pts</span>
+      <div class="flex gap-1.5 shrink-0">
+        <button type="button" class="btn btn-good !px-3 !py-2 !rounded-xl" data-beh="good" data-id="${s.id}">${icon('plus', 'w-4 h-4')}Good</button>
+        <button type="button" class="btn btn-bad !px-3 !py-2 !rounded-xl" data-beh="bad" data-id="${s.id}">${icon('minus', 'w-4 h-4')}Bad</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderFocus(); renderStars(); renderActivity();
+}
+
+function renderFocus() {
+  const range = $('#focus-range').value;
+  const days = range === 'all' ? null : +range;
+  const rows = state.students
+    .map(s => ({ s, c: behaviorCounts(s.id, days) }))
+    .filter(x => x.c.bad > 0)
+    .sort((a, b) => b.c.bad - a.c.bad || a.c.net - b.c.net)
+    .slice(0, 5);
+  const max = rows.length ? rows[0].c.bad : 1;
+
+  $('#focus-list').innerHTML = rows.length ? rows.map(({ s, c }, i) => {
+    const level = c.bad >= 5 ? ['High attention', 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300']
+               : c.bad >= 3 ? ['Needs mentoring', 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300']
+                            : ['Keep an eye', 'bg-slate-200/70 dark:bg-white/10 text-slate-500 dark:text-slate-400'];
+    return `
+    <div class="p-3 rounded-2xl bg-slate-900/[.03] dark:bg-white/[.04] border border-slate-200/50 dark:border-white/[.06]">
+      <div class="flex items-center gap-2.5">
+        <span class="font-display font-extrabold text-slate-300 dark:text-slate-600 w-4 text-center">${i + 1}</span>
+        ${avatarHTML(s.name, 'w-9 h-9 text-xs')}
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-sm truncate">${esc(s.name)}</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">${c.bad} concern${c.bad === 1 ? '' : 's'} · net ${c.net > 0 ? '+' : ''}${c.net} pts</p>
+        </div>
+        <span class="chip ${level[1]} !text-[10px]">${level[0]}</span>
+        <a class="icon-btn !w-9 !h-9 !bg-emerald-500 hover:!bg-emerald-600 !text-white !border-none shrink-0" target="_blank" rel="noopener" title="Message parent on WhatsApp"
+           href="${esc(waLink(s.phone, msgBehavior(s, 'bad', `a pattern of behaviour concerns (${c.bad} recent incidents — most recently: ${lastBadReason(s.id) || 'general conduct'})`, todayKey())))}">${icon('wa', 'w-4 h-4')}</a>
+      </div>
+      <div class="h-1.5 rounded-full bg-slate-900/[.07] dark:bg-white/10 mt-2.5 overflow-hidden">
+        <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-500 transition-all duration-500" style="width:${Math.round(c.bad / max * 100)}%"></div>
+      </div>
+    </div>`;
+  }).join('')
+  : `<div class="text-center py-5">
+       <span class="w-11 h-11 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 text-emerald-500 flex items-center justify-center">${icon('check', 'w-5 h-5')}</span>
+       <p class="text-sm font-semibold mt-3">No concerns in this period</p>
+       <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Your class is doing great — keep it up!</p>
+     </div>`;
+}
+function lastBadReason(studentId) {
+  const bad = state.behavior.filter(l => l.studentId === studentId && l.type === 'bad')
+    .sort((a, b) => (b.date + b.ts).localeCompare(a.date + a.ts));
+  return bad[0]?.reason || '';
+}
+
+function renderStars() {
+  const rows = state.students
+    .map(s => ({ s, c: behaviorCounts(s.id) }))
+    .filter(x => x.c.good > 0)
+    .sort((a, b) => b.c.good - a.c.good || b.c.net - a.c.net)
+    .slice(0, 3);
+  const medal = ['text-amber-400', 'text-slate-400', 'text-orange-400'];
+  $('#stars-list').innerHTML = rows.length ? rows.map(({ s, c }, i) => `
+    <div class="flex items-center gap-2.5 p-2 rounded-2xl hover:bg-slate-900/[.03] dark:hover:bg-white/[.04] transition">
+      <span class="${medal[i]}">${icon('star', 'w-5 h-5')}</span>
+      ${avatarHTML(s.name, 'w-9 h-9 text-xs')}
+      <p class="flex-1 font-semibold text-sm truncate">${esc(s.name)}</p>
+      <span class="chip bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">+${c.good} good</span>
+    </div>`).join('')
+  : '<p class="text-sm text-slate-400 dark:text-slate-500 text-center py-4">Log some positive behaviour and your stars will shine here.</p>';
+}
+
+function renderActivity() {
+  const logs = [...state.behavior]
+    .filter(l => activityFilter === 'all' || l.type === activityFilter)
+    .sort((a, b) => (b.date + String(b.ts)).localeCompare(a.date + String(a.ts)))
+    .slice(0, 40);
+  $('#activity-list').innerHTML = logs.length ? logs.map(l => {
+    const s = studentById(l.studentId); if (!s) return '';
+    const good = l.type === 'good';
+    return `
+    <div class="flex items-start gap-2.5 p-2 rounded-2xl hover:bg-slate-900/[.03] dark:hover:bg-white/[.04] transition anim-fadeUp">
+      <span class="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center mt-0.5 ${good ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400'}">${icon(good ? 'plus' : 'minus', 'w-4 h-4')}</span>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm leading-snug"><strong>${esc(s.name)}</strong> <span class="text-slate-500 dark:text-slate-400">· ${esc(l.reason)}</span></p>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">${relDay(l.date)}</p>
+      </div>
+      ${!good ? `<a class="icon-btn !w-8 !h-8 !bg-emerald-500 hover:!bg-emerald-600 !text-white !border-none" target="_blank" rel="noopener" title="Notify parent about this incident"
+        href="${esc(waLink(s.phone, msgBehavior(s, 'bad', l.reason, l.date)))}">${icon('wa', 'w-3.5 h-3.5 w-[14px] h-[14px]')}</a>` : ''}
+      <button type="button" class="icon-btn !w-8 !h-8 text-slate-400 hover:!text-rose-500" data-del-log="${l.id}" title="Delete this log">${icon('trash', 'w-4 h-4')}</button>
+    </div>`;
+  }).join('')
+  : '<p class="text-sm text-slate-400 dark:text-slate-500 text-center py-6">No behaviour logged yet.</p>';
+}
+
+/* ---------- behaviour logger modal ---------- */
+const bmState = { studentId: null, type: 'good', reason: '' };
+function openBehavior(studentId, type) {
+  const s = studentById(studentId); if (!s) return;
+  bmState.studentId = studentId; bmState.type = type; bmState.reason = '';
+  const good = type === 'good';
+  $('#bm-icon').className = `w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${good ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-500' : 'bg-rose-100 dark:bg-rose-500/15 text-rose-500'}`;
+  $('#bm-icon').innerHTML = icon(good ? 'plus' : 'minus', 'w-6 h-6');
+  $('#bm-title').textContent = good ? 'Log positive behaviour' : 'Log a concern';
+  $('#bm-student').textContent = `For ${s.name} · ${fmtPhone(s.phone)}`;
+  $('#bm-chips').innerHTML = REASONS[type].map(r => `<button type="button" class="reason-chip" data-reason="${esc(r)}">${esc(r)}</button>`).join('');
+  $('#bm-custom').value = '';
+  $('#bm-date').value = todayKey();
+  $('#bm-notify').checked = !good;                       // suggest notifying parents for concerns
+  $('#bm-notify-label').textContent = good ? 'Also share this good news with parent on WhatsApp' : 'Also notify parent on WhatsApp';
+  $('#bm-save').className = `btn flex-1 text-white shadow-lg ${good ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/30'}`;
+  $('#bm-error').classList.add('hidden');
+  openModal('behavior-modal');
+}
+function saveBehavior() {
+  const s = studentById(bmState.studentId); if (!s) return;
+  const reason = $('#bm-custom').value.trim() || bmState.reason;
+  if (!reason) {
+    const e = $('#bm-error'); e.textContent = 'Pick a quick reason or write your own note first.'; e.classList.remove('hidden');
+    $('#bm-chips').classList.remove('anim-shake'); void $('#bm-chips').offsetWidth; $('#bm-chips').classList.add('anim-shake');
+    return;
+  }
+  const dateK = $('#bm-date').value || todayKey();
+  state.behavior.push({ id: uid(), studentId: s.id, type: bmState.type, reason, date: dateK, ts: Date.now() });
+  saveState(); renderBehavior();
+  const notify = $('#bm-notify').checked;
+  closeModal($('#bm-save'));
+  toast(`${bmState.type === 'good' ? 'Positive' : 'Concern'} logged for ${s.name}`);
+  if (notify) window.open(waLink(s.phone, msgBehavior(s, bmState.type, reason, dateK)), '_blank', 'noopener');
+}
+function initBehavior() {
+  $('#beh-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-beh]'); if (!btn) return;
+    openBehavior(btn.dataset.id, btn.dataset.beh);
+  });
+  $('#beh-search').addEventListener('input', renderBehavior);
+  $('#focus-range').addEventListener('change', renderFocus);
+  $$('.act-filter').forEach(b => b.addEventListener('click', () => {
+    activityFilter = b.dataset.f;
+    $$('.act-filter').forEach(x => x.classList.toggle('active', x === b));
+    renderActivity();
+  }));
+  $('#activity-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-del-log]'); if (!btn) return;
+    state.behavior = state.behavior.filter(l => l.id !== btn.dataset.delLog);
+    saveState(); renderBehavior(); toast('Log deleted');
+  });
+  $('#bm-chips').addEventListener('click', e => {
+    const chip = e.target.closest('[data-reason]'); if (!chip) return;
+    const was = bmState.reason === chip.dataset.reason;
+    bmState.reason = was ? '' : chip.dataset.reason;
+    $('#bm-custom').value = '';
+    $$('#bm-chips .reason-chip').forEach(c => {
+      c.classList.remove('sel-good', 'sel-bad');
+      if (c.dataset.reason === bmState.reason) c.classList.add(bmState.type === 'good' ? 'sel-good' : 'sel-bad');
+    });
+    $('#bm-error').classList.add('hidden');
+  });
+  $('#bm-save').addEventListener('click', saveBehavior);
+}
+
+/* ================================================================
+   TAB 3 · MARKS & GRADES
+================================================================ */
+let supportTestId = null;
+
+function scoreOf(testId, studentId) {
+  const v = state.scores[testId]?.[studentId];
+  return typeof v === 'number' ? v : null;
+}
+function pctOf(test, score) { return score === null || !test.total ? null : score / test.total * 100; }
+function studentAvgPct(studentId) {
+  const pcts = state.tests.map(t => pctOf(t, scoreOf(t.id, studentId))).filter(p => p !== null);
+  return pcts.length ? pcts.reduce((a, b) => a + b, 0) / pcts.length : null;
+}
+function gradeFor(pct) {
+  if (pct === null) return null;
+  return pct >= 90 ? 'A+' : pct >= 80 ? 'A' : pct >= 70 ? 'B' : pct >= 60 ? 'C' : pct >= 50 ? 'D' : pct >= 40 ? 'E' : 'F';
+}
+function gradeChip(pct) {
+  const g = gradeFor(pct); if (!g) return '<span class="text-slate-300 dark:text-slate-600">—</span>';
+  const cls = ['A+', 'A'].includes(g) ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+            : g === 'B' ? 'bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300'
+            : g === 'C' ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300'
+            : g === 'F' ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                        : 'bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300';
+  return `<span class="chip ${cls} !px-2.5 font-display">${g}</span>`;
+}
+const LOW_CELL = ['bg-rose-100', 'dark:bg-rose-500/15'];
+const LOW_TEXT = ['text-rose-600', 'dark:text-rose-400'];
+
+function renderMarks() {
+  const threshold = state.settings.threshold;
+  const table = $('#marks-table');
+  const hasStudents = state.students.length > 0;
+  const hasTests = state.tests.length > 0;
+  const showGrid = hasStudents && hasTests;
+
+  $('#marks-empty').classList.toggle('hidden', showGrid);
+  $('#marks-scroll').classList.toggle('hidden', !showGrid);
+  $('#marks-empty-msg').textContent = !hasStudents
+    ? 'Add students to your roster first (top-right button), then add a test.'
+    : 'Add a test above, then type scores straight into the grid.';
+
+  if (showGrid) {
+    const head = `<tr>
+      <th class="text-left font-display text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">Student</th>
+      ${state.tests.map(t => `
+        <th class="text-center">
+          <span class="flex items-center justify-center gap-1 font-display font-bold text-slate-700 dark:text-slate-200">
+            ${esc(t.name)}
+            <button type="button" class="text-slate-300 hover:text-rose-500 dark:text-slate-600 transition" data-del-test="${t.id}" title="Delete this test">${icon('x', 'w-3.5 h-3.5 w-[14px] h-[14px]')}</button>
+          </span>
+          <span class="block text-[11px] font-medium text-slate-400 dark:text-slate-500">/ ${t.total} · ${t.date ? fmtKey(t.date) : ''}</span>
+        </th>`).join('')}
+      <th class="text-center font-display text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">Average</th>
+      <th class="text-center font-display text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">Grade</th>
+    </tr>`;
+
+    const body = state.students.map(s => {
+      const avg = studentAvgPct(s.id);
+      return `<tr class="border-t border-slate-100 dark:border-white/[.06]">
+        <td>
+          <span class="flex items-center gap-2.5">
+            ${avatarHTML(s.name, 'w-8 h-8 text-[11px]')}
+            <span class="font-semibold">${esc(s.name)}</span>
+          </span>
+        </td>
+        ${state.tests.map(t => {
+          const sc = scoreOf(t.id, s.id);
+          const p = pctOf(t, sc);
+          const low = p !== null && p < threshold;
+          return `<td class="text-center ${low ? LOW_CELL.join(' ') : ''}" data-cell="${t.id}:${s.id}">
+            <input type="number" inputmode="decimal" min="0" max="${t.total}" step="0.5" placeholder="–"
+              class="score-input no-spin ${low ? LOW_TEXT.join(' ') : ''}"
+              data-test="${t.id}" data-student="${s.id}" value="${sc === null ? '' : sc}"
+              aria-label="${esc(s.name)} score in ${esc(t.name)}">
+          </td>`;
+        }).join('')}
+        <td class="text-center font-display font-bold" id="rowavg-${s.id}">${avg === null ? '—' : Math.round(avg) + '%'}</td>
+        <td class="text-center" id="grade-${s.id}">${gradeChip(avg)}</td>
+      </tr>`;
+    }).join('');
+
+    const foot = `<tr class="border-t-2 border-slate-200 dark:border-white/10">
+      <td class="font-display font-bold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Class average</td>
+      ${state.tests.map(t => `<td class="text-center font-display font-bold" id="colavg-${t.id}">${testAverage(t.id) === null ? '—' : testAverage(t.id) + '%'}</td>`).join('')}
+      <td class="text-center font-display font-bold text-indigo-600 dark:text-indigo-400" id="overall-avg">${overallAvg() === null ? '—' : Math.round(overallAvg()) + '%'}</td>
+      <td></td>
+    </tr>`;
+
+    table.innerHTML = `<thead>${head}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot>`;
+  } else {
+    table.innerHTML = '';
+  }
+  renderSupportSelect();
+  renderSupport();
+}
+function overallAvg() {
+  const avgs = state.students.map(s => studentAvgPct(s.id)).filter(a => a !== null);
+  return avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
+}
+
+/* live update of derived cells while typing (no full re-render → keeps focus) */
+function updateMarksDerived(testId, studentId) {
+  const t = state.tests.find(x => x.id === testId); if (!t) return;
+  const sc = scoreOf(testId, studentId);
+  const p = pctOf(t, sc);
+  const low = p !== null && p < state.settings.threshold;
+  const cell = $(`#marks-table [data-cell="${testId}:${studentId}"]`);
+  if (cell) {
+    cell.classList.remove(...LOW_CELL); if (low) cell.classList.add(...LOW_CELL);
+    const input = cell.querySelector('input');
+    input.classList.remove(...LOW_TEXT); if (low) input.classList.add(...LOW_TEXT);
+  }
+  const avg = studentAvgPct(studentId);
+  const ra = $('#rowavg-' + studentId); if (ra) ra.textContent = avg === null ? '—' : Math.round(avg) + '%';
+  const gr = $('#grade-' + studentId);  if (gr) gr.innerHTML = gradeChip(avg);
+  const ca = $('#colavg-' + testId);    if (ca) ca.textContent = testAverage(testId) === null ? '—' : testAverage(testId) + '%';
+  const oa = $('#overall-avg');        if (oa) oa.textContent = overallAvg() === null ? '—' : Math.round(overallAvg()) + '%';
+  renderSupport(); renderStats();
+}
+
+function renderSupportSelect() {
+  const sel = $('#support-test');
+  if (!state.tests.length) { sel.innerHTML = '<option>No tests yet</option>'; sel.disabled = true; supportTestId = null; return; }
+  sel.disabled = false;
+  if (!state.tests.some(t => t.id === supportTestId)) {
+    supportTestId = [...state.tests].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0].id;
+  }
+  sel.innerHTML = state.tests.map(t => `<option value="${t.id}" ${t.id === supportTestId ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
+}
+function renderSupport() {
+  const box = $('#support-list');
+  const t = state.tests.find(x => x.id === supportTestId);
+  if (!t) { box.innerHTML = '<p class="text-sm text-slate-400 dark:text-slate-500 text-center py-6">Add a test and enter scores to see who needs support.</p>'; return; }
+  const rows = state.students
+    .map(s => ({ s, sc: scoreOf(t.id, s.id) }))
+    .filter(x => x.sc !== null && pctOf(t, x.sc) < state.settings.threshold)
+    .sort((a, b) => pctOf(t, a.sc) - pctOf(t, b.sc));
+  box.innerHTML = rows.length ? rows.map(({ s, sc }) => {
+    const p = Math.round(pctOf(t, sc));
+    return `
+    <div class="row-item anim-fadeUp">
+      ${avatarHTML(s.name)}
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold truncate">${esc(s.name)}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Scored <strong class="text-rose-600 dark:text-rose-400">${sc}/${t.total}</strong> in ${esc(t.name)}</p>
+      </div>
+      <span class="chip bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300">${p}%</span>
+      <a class="btn btn-wa !px-3 !py-2 !rounded-xl shrink-0" target="_blank" rel="noopener" title="Inform parent on WhatsApp"
+         href="${esc(waLink(s.phone, msgMarks(s, t, sc, p)))}">${icon('wa', 'w-4 h-4')}<span class="hidden sm:inline">Inform Parent</span><span class="sm:hidden">Inform</span></a>
+    </div>`;
+  }).join('')
+  : `<div class="text-center py-6">
+       <span class="w-11 h-11 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 text-emerald-500 flex items-center justify-center">${icon('check', 'w-5 h-5')}</span>
+       <p class="text-sm font-semibold mt-3">Everyone's at or above ${state.settings.threshold}% in ${esc(t.name)}</p>
+       <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Great teaching!</p>
+     </div>`;
+}
+
+function initMarks() {
+  $('#test-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const nameEl = $('#test-name');
+    const name = nameEl.value.trim();
+    if (!name) { nameEl.classList.remove('anim-shake'); void nameEl.offsetWidth; nameEl.classList.add('anim-shake'); nameEl.focus(); return; }
+    const total = clamp(parseInt($('#test-total').value, 10) || 50, 1, 1000);
+    const test = { id: uid(), name, total, date: $('#test-date').value || todayKey() };
+    state.tests.push(test);
+    state.scores[test.id] = {};
+    supportTestId = test.id;
+    nameEl.value = '';
+    saveState(); renderMarks(); renderStats();
+    toast(`Test "${name}" added — start entering scores`);
+  });
+
+  const table = $('#marks-table');
+  table.addEventListener('input', e => {
+    const input = e.target.closest('.score-input'); if (!input) return;
+    const { test, student } = input.dataset;
+    const t = state.tests.find(x => x.id === test); if (!t) return;
+    const raw = input.value.trim();
+    let val = raw === '' ? null : parseFloat(raw);
+    if (val !== null && isNaN(val)) val = null;
+    if (val !== null) val = clamp(val, 0, t.total);
+    if (!state.scores[test]) state.scores[test] = {};
+    state.scores[test][student] = val;
+    saveState();
+    updateMarksDerived(test, student);
+  });
+  table.addEventListener('change', e => {           // tidy the displayed value on blur
+    const input = e.target.closest('.score-input'); if (!input) return;
+    const v = scoreOf(input.dataset.test, input.dataset.student);
+    input.value = v === null ? '' : v;
+  });
+  table.addEventListener('click', e => {
+    const btn = e.target.closest('[data-del-test]'); if (!btn) return;
+    const t = state.tests.find(x => x.id === btn.dataset.delTest); if (!t) return;
+    openConfirm({
+      title: 'Delete this test?',
+      msg: `"${t.name}" and all its scores will be permanently removed.`,
+      okLabel: 'Delete test',
+      onOk: () => {
+        state.tests = state.tests.filter(x => x.id !== t.id);
+        delete state.scores[t.id];
+        saveState(); renderMarks(); renderStats();
+        toast('Test deleted');
+      }
+    });
+  });
+
+  $('#marks-threshold').addEventListener('change', e => {
+    const v = clamp(parseInt(e.target.value, 10) || 40, 1, 99);
+    e.target.value = v;
+    state.settings.threshold = v;
+    saveState(); renderMarks();
+  });
+  $('#support-test').addEventListener('change', e => { supportTestId = e.target.value; renderSupport(); });
+
+  $('#btn-csv').addEventListener('click', () => {
+    if (!state.tests.length || !state.students.length) return toast('Add a test with scores first', 'error');
+    const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [[q('Student'), ...state.tests.map(t => q(`${t.name} (/${t.total})`)), q('Average %'), q('Grade')].join(',')];
+    state.students.forEach(s => {
+      const avg = studentAvgPct(s.id);
+      rows.push([q(s.name), ...state.tests.map(t => { const v = scoreOf(t.id, s.id); return v === null ? '' : v; }),
+                 avg === null ? '' : Math.round(avg), gradeFor(avg) || ''].join(','));
+    });
+    downloadFile(rows.join('\n'), `ClassPulse_Marks_${state.setup.className || 'class'}_${todayKey()}.csv`, 'text/csv');
+    toast('Marks exported as CSV');
+  });
+}
+
+function downloadFile(content, filename, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ================================================================
+   TAB 4 · PORTION & DEADLINES
+================================================================ */
+let sylFilter = 'all';
+
+function sylStatus(item) {
+  if (item.done) return 'done';
+  const d = daysUntil(item.due);
+  if (d < 0) return 'overdue';
+  if (d <= 7) return 'soon';
+  return 'upcoming';
+}
+function sylBadge(item) {
+  const d = daysUntil(item.due);
+  if (item.done) return `<span class="chip bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">${icon('check', 'w-3 h-3')}Done${item.doneAt ? ' · ' + relDay(item.doneAt) : ''}</span>`;
+  if (d < 0)  return `<span class="chip bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300">${icon('clock', 'w-3 h-3')}Overdue by ${-d}d</span>`;
+  if (d === 0) return `<span class="chip bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300">${icon('clock', 'w-3 h-3')}Due today</span>`;
+  if (d === 1) return `<span class="chip bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300">${icon('clock', 'w-3 h-3')}Due tomorrow</span>`;
+  return `<span class="chip bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300">${icon('clock', 'w-3 h-3')}Due in ${d}d</span>`;
+}
+function sylItemHTML(item) {
+  return `
+  <div class="row-item anim-fadeUp">
+    <button type="button" class="check-box ${item.done ? 'done' : ''}" data-syl-toggle="${item.id}" title="${item.done ? 'Mark as not done' : 'Mark as completed'}" aria-label="Toggle complete">
+      ${item.done ? icon('check', 'w-4 h-4') : ''}
+    </button>
+    <div class="flex-1 min-w-0">
+      <p class="font-semibold truncate ${item.done ? 'line-through text-slate-400 dark:text-slate-500' : ''}">${esc(item.title)}</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+        ${item.subject ? `<span class="chip bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 !py-0.5 !px-2 !text-[10px]">${esc(item.subject)}</span>` : ''}
+        <span>Target: ${fmtKey(item.due)}</span>
+      </p>
+    </div>
+    ${sylBadge(item)}
+    <button type="button" class="icon-btn !w-8 !h-8 text-slate-400 hover:!text-rose-500 shrink-0" data-syl-del="${item.id}" title="Delete topic">${icon('trash', 'w-4 h-4')}</button>
+  </div>`;
+}
+
+function renderSyllabus() {
+  const total = state.syllabus.length;
+  const done = state.syllabus.filter(x => x.done).length;
+  const overdue = state.syllabus.filter(x => sylStatus(x) === 'overdue').length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  $('#syl-pct').textContent = pct + '%';
+  $('#syl-bar').style.width = pct + '%';
+  $('#syl-counts').textContent = total
+    ? `${done} of ${total} topics completed · ${total - done} to go${overdue ? ` · ${overdue} overdue` : ''}`
+    : 'Add your first topic below to start tracking.';
+
+  const sorted = [...state.syllabus].sort((a, b) => a.due.localeCompare(b.due));
+  let sections = [];
+  if (sylFilter === 'all') {
+    const groups = [
+      ['overdue', 'Overdue — needs rescheduling'],
+      ['soon', 'Due this week'],
+      ['upcoming', 'Upcoming'],
+      ['done', 'Completed']
+    ];
+    sections = groups
+      .map(([key, label]) => ({ label, items: sorted.filter(x => sylStatus(x) === key) }))
+      .filter(g => g.items.length);
+  } else {
+    const items = sorted.filter(x =>
+      sylFilter === 'pending' ? !x.done :
+      sylFilter === 'overdue' ? sylStatus(x) === 'overdue' : x.done);
+    if (items.length) sections = [{ label: sylFilter[0].toUpperCase() + sylFilter.slice(1), items }];
+  }
+
+  $('#syl-empty').classList.toggle('hidden', sections.length > 0);
+  $('#syl-list').innerHTML = sections.map(g => `
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-1">${esc(g.label)} · ${g.items.length}</p>
+      <div class="card !rounded-2xl px-2 sm:px-3 py-1.5 divide-y divide-slate-100 dark:divide-white/[.06]">
+        ${g.items.map(sylItemHTML).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function initSyllabus() {
+  $('#syl-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const titleEl = $('#syl-title');
+    const title = titleEl.value.trim();
+    if (!title) { titleEl.classList.remove('anim-shake'); void titleEl.offsetWidth; titleEl.classList.add('anim-shake'); titleEl.focus(); return; }
+    state.syllabus.push({
+      id: uid(), title,
+      subject: $('#syl-subject').value.trim(),
+      due: $('#syl-date').value || todayKey(),
+      done: false, doneAt: null
+    });
+    titleEl.value = ''; $('#syl-subject').value = '';
+    saveState(); renderSyllabus(); renderStats();
+    toast('Topic added to your portion plan');
+  });
+  $$('.syl-filter').forEach(b => b.addEventListener('click', () => {
+    sylFilter = b.dataset.f;
+    $$('.syl-filter').forEach(x => x.classList.toggle('active', x === b));
+    renderSyllabus();
+  }));
+  $('#syl-list').addEventListener('click', e => {
+    const tog = e.target.closest('[data-syl-toggle]');
+    const del = e.target.closest('[data-syl-del]');
+    if (tog) {
+      const item = state.syllabus.find(x => x.id === tog.dataset.sylToggle); if (!item) return;
+      item.done = !item.done;
+      item.doneAt = item.done ? todayKey() : null;
+      saveState(); renderSyllabus(); renderStats();
+      const done = state.syllabus.filter(x => x.done).length;
+      if (item.done && state.syllabus.length && done === state.syllabus.length) toast('100% portion completed — congratulations!');
+      else toast(item.done ? `Completed: ${item.title}` : `Reopened: ${item.title}`);
+    } else if (del) {
+      const item = state.syllabus.find(x => x.id === del.dataset.sylDel);
+      state.syllabus = state.syllabus.filter(x => x.id !== del.dataset.sylDel);
+      saveState(); renderSyllabus(); renderStats();
+      toast(item ? `Removed "${item.title}"` : 'Topic removed');
+    }
+  });
+}
+
+/* ================================================================
+   ROSTER MANAGER (modal)
+================================================================ */
+function renderRoster() {
+  $('#r-subtitle').textContent = `${state.students.length} student${state.students.length === 1 ? '' : 's'} in ${classLabel()}`;
+  $('#r-empty').classList.toggle('hidden', state.students.length > 0);
+  $('#r-list').innerHTML = state.students.map(s => `
+    <div class="row-item !py-2.5">
+      ${avatarHTML(s.name, 'w-9 h-9 text-xs')}
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-sm truncate">${esc(s.name)}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">${esc(fmtPhone(s.phone))}</p>
+      </div>
+      <a class="icon-btn !w-8 !h-8 !bg-emerald-500 hover:!bg-emerald-600 !text-white !border-none" target="_blank" rel="noopener" title="Open WhatsApp chat" href="https://wa.me/${s.phone}">${icon('wa', 'w-3.5 h-3.5 w-[14px] h-[14px]')}</a>
+      <button type="button" class="icon-btn !w-8 !h-8" data-r-edit="${s.id}" title="Edit student">${icon('edit', 'w-4 h-4')}</button>
+      <button type="button" class="icon-btn !w-8 !h-8 hover:!text-rose-500" data-r-del="${s.id}" title="Remove student">${icon('trash', 'w-4 h-4')}</button>
+    </div>`).join('');
+}
+function resetRosterForm() {
+  $('#r-edit-id').value = '';
+  $('#r-name').value = ''; $('#r-phone').value = '';
+  $('#r-form-title').textContent = 'Add a student';
+  $('#r-submit span').textContent = 'Add student';
+  $('#r-cancel-edit').classList.add('hidden');
+  $('#r-error').classList.add('hidden');
+}
+function rosterError(msg, el) {
+  const e = $('#r-error'); e.textContent = msg; e.classList.remove('hidden');
+  if (el) { el.classList.remove('anim-shake'); void el.offsetWidth; el.classList.add('anim-shake'); el.focus(); }
+}
+function deleteStudent(id) {
+  state.students = state.students.filter(s => s.id !== id);
+  Object.values(state.attendance).forEach(day => delete day[id]);
+  Object.values(state.scores).forEach(sc => delete sc[id]);
+  state.behavior = state.behavior.filter(l => l.studentId !== id);
+}
+
+function initRoster() {
+  const open = () => { resetRosterForm(); renderRoster(); openModal('roster-modal'); };
+  $('#btn-roster').addEventListener('click', open);
+  $$('.open-roster').forEach(b => b.addEventListener('click', open));
+
+  $('#r-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('#r-name').value.trim();
+    const phone = normalizePhone($('#r-phone').value, $('#r-cc').value);
+    const editId = $('#r-edit-id').value;
+    if (!name) return rosterError('Enter the student\'s name.', $('#r-name'));
+    if (phone.length < 10) return rosterError('Enter a valid parent WhatsApp number.', $('#r-phone'));
+    if (state.students.some(s => s.phone === phone && s.id !== editId)) return rosterError('That number already belongs to another student.', $('#r-phone'));
+    if (editId) {
+      const s = studentById(editId); if (s) { s.name = name; s.phone = phone; }
+      toast('Student updated');
+    } else {
+      state.students.push({ id: uid(), name, phone });
+      toast(`${name} added to ${classLabel()}`);
+    }
+    saveState(); renderAll(); renderRoster(); resetRosterForm();
+    $('#r-name').focus();
+  });
+
+  $('#r-cancel-edit').addEventListener('click', resetRosterForm);
+
+  $('#r-list').addEventListener('click', e => {
+    const edit = e.target.closest('[data-r-edit]');
+    const del = e.target.closest('[data-r-del]');
+    if (edit) {
+      const s = studentById(edit.dataset.rEdit); if (!s) return;
+      $('#r-edit-id').value = s.id;
+      $('#r-name').value = s.name;
+      $('#r-phone').value = '+' + s.phone;
+      $('#r-form-title').textContent = 'Edit student';
+      $('#r-submit span').textContent = 'Save changes';
+      $('#r-cancel-edit').classList.remove('hidden');
+      $('#r-error').classList.add('hidden');
+      $('#r-name').focus();
+    } else if (del) {
+      const s = studentById(del.dataset.rDel); if (!s) return;
+      openConfirm({
+        title: `Remove ${s.name}?`,
+        msg: 'Their attendance, marks and behaviour history will also be deleted. This cannot be undone.',
+        okLabel: 'Remove student',
+        onOk: () => { deleteStudent(s.id); saveState(); renderAll(); renderRoster(); resetRosterForm(); toast(`${s.name} removed`); }
+      });
+    }
+  });
+}
+
+/* ================================================================
+   HEADER ACTIONS · backup / restore / reset
+================================================================ */
+function initHeaderActions() {
+  $('#btn-export').addEventListener('click', () => {
+    downloadFile(JSON.stringify(state, null, 2), `ClassPulse_Backup_${state.setup.className || 'class'}_${todayKey()}.json`, 'application/json');
+    toast('Backup downloaded — keep it safe');
+  });
+
+  $('#import-file').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.students) || !parsed.setup) throw new Error('bad shape');
+      const base = defaultState();
+      state = { ...base, ...parsed, setup: { ...base.setup, ...parsed.setup }, settings: { ...base.settings, ...(parsed.settings || {}) } };
+      saveState(); applyTheme();
+      state.onboarded ? showApp() : showWizard();
+      toast('Backup restored successfully');
+    } catch (err) {
+      toast('That file is not a valid ClassPulse backup', 'error');
+    }
+  });
+
+  $('#btn-reset').addEventListener('click', () => {
+    openConfirm({
+      title: 'Reset this class?',
+      msg: `All data for ${classLabel()} — students, attendance, behaviour, marks and syllabus — will be permanently deleted. Consider downloading a backup first.`,
+      okLabel: 'Reset everything',
+      onOk: () => {
+        const theme = state.settings.theme;
+        state = defaultState();
+        state.settings.theme = theme;
+        saveState();
+        location.reload();           // cleanest full reset back to the wizard
+      }
+    });
+  });
+}
+
+/* ================================================================
+   BOOT
+================================================================ */
+function fillCountryCodes() {
+  $$('.cc-select').forEach(sel => {
+    sel.innerHTML = COUNTRY_CODES.map(([cc, label]) => `<option value="${cc}">${label}</option>`).join('');
+    sel.value = COUNTRY_CODES.some(([cc]) => cc === state.settings.cc) ? state.settings.cc : '91';
+    sel.addEventListener('change', () => {
+      state.settings.cc = sel.value; saveState();
+      $$('.cc-select').forEach(s => { if (s !== sel) s.value = sel.value; });
+    });
+  });
+}
+
+fillCountryCodes();
+applyTheme();
+initWizard();
+initAttendance();
+initBehavior();
+initMarks();
+initSyllabus();
+initRoster();
+initHeaderActions();
+if (state.onboarded) showApp(); else showWizard();
+</script>
+</body>
+</html>
